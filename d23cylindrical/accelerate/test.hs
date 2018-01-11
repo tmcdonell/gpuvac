@@ -1,4 +1,5 @@
 
+import qualified Data.List as L 
 import qualified Prelude as P
 import Data.Array.Accelerate          as Acc
 
@@ -39,9 +40,10 @@ programRun :: State -> State
 programRun = GPU.run1 advance 
 
 programAdvance :: State -> Int -> State 
-programAdvance initial count = P.foldr (\_ state -> programRun state) initial [0..count-1]
+programAdvance initial count = L.foldl' (\state _ -> programRun state) initial [0..count-1]
 
+-- need to do multiple iterations on GPU
 start :: State
 start = (range 1000, range 1000)
 
---res = GPU.run (derivative 10000000)
+main = P.putStrLn . P.show $ programAdvance start 1000000
