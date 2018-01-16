@@ -6,11 +6,6 @@ import qualified Data.Array.Accelerate.LLVM.PTX     as GPU
 import Data.Array.Accelerate as A
 import qualified Prelude as P
 
-minmod :: (Ord a, P.Num (Exp a)) => Exp a -> Exp a
-minmod r = max  0 $ min r 1
-
-ratio :: P.Fractional a => (a,a,a) -> a
-ratio (p,c,n) =  (c - p) / (n - c)
 
 correctflux :: P.Fractional a => (t -> a) -> (t -> t -> a) -> t -> t -> a
 correctflux toflx transport left right = 0.5 * (toflx right + toflx left - transport left right)
