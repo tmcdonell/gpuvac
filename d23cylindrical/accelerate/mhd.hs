@@ -66,8 +66,8 @@ squareSound:: Fractional a => a -> MHD1 a -> a
 squareSound gamma mhd = gamma * (pressurePlasma1 gamma mhd) / density fluid 
                             where (fluid, _, _) = mhd 
 
-cmax :: Floating a => (Lens' (V3 a) a) -> a -> MHD1 a -> a
-cmax l gamma mhdFluid = currvel + sound 
+cmax :: Floating a => a -> (Lens' (V3 a) a) -> MHD1 a -> a
+cmax gamma l mhdFluid = currvel + sound 
                         where
                             (fluid,energy,magnetic) = mhdFluid
                             bd = magnetic ^. l --magnetic field along direction of travel
