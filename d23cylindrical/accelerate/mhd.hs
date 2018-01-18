@@ -88,13 +88,13 @@ perp l v = v & l .~ 0
 flux :: Fractional a => a -> (Lens' (V3 a) a) -> MHD1 a -> MHD1 a 
 flux gamma dir mhd = ((momflux,denflux),enerflux,magflux)
                             where 
+                                pt = pressureTotal1 gamma mhd
                                 (fluid, ener, mag) = mhd
                                 (mom,den) = fluid
                                 v = mom ^/ den -- velocity vector
                                 vi = v^.dir  -- velocity along direction of derivative
                                 bi = mag ^.dir  -- magnetic component along direction of derivative
                                 n = zero & dir .~ 1.0 -- unit vector along direction of derivative
-                                pt = pressureTotal1 gamma mhd
                                 denflux = vi*den
                                 momflux = vi * den *^ v ^-^ bi *^ mag + den *^ n 
                                 enerflux = vi*ener - bi  * (dot mag v) + vi*den
