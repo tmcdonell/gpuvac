@@ -84,7 +84,6 @@ cmax gamma l mhdFluid = currvel + sound
 perp :: Num a => (Lens' (f a) a) -> f a -> f a
 perp l v = v & l .~ 0
 
-
 flux :: Fractional a => a -> (Lens' (V3 a) a) -> MHD1 a -> MHD1 a 
 flux gamma dir mhd = ((momflux,denflux),enerflux,magflux)
                             where 
