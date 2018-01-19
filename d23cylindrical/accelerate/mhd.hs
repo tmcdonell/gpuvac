@@ -1,104 +1,72 @@
 {-# LANGUAGE Rank2Types #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module MHD where 
 
-import Linear
+import qualified Prelude as P
+
+import Data.Array.Accelerate as Acc 
+import Data.Array.Accelerate.Linear
 import Control.Lens 
 
-type Momentum a = V3 a
-type Density a = a 
-type Velocity a = V3 a
+type PressureField sh = Array sh Double 
+type MagneticField sh = Array sh (V3 Double)
+type MomentumField sh = Array sh (V3 Double) 
+type DensityField sh = Array sh Double
+type EnergyField sh = Array sh Double
+type ForceField sh = Array sh (V3 Double) 
+type VelocityField sh = Array sh (V3 Double)
+type SpeedField sh = Array sh Double 
 
-type Energy a = a
-type Pressure a = a 
+magneticenergy :: Shape sh => Acc (MagneticField sh) -> Acc (EnergyField sh)
+magneticenergy mag = Acc.map (\b -> (quadrance b) / 2 ) mag
 
-type Fluid a = (Momentum a, Density a) 
-type PrimFluid a = (Velocity a, Density a)
+kineticenergy :: Shape sh => Acc (MomentumField sh) -> Acc (DensityField sh) -> Acc (EnergyField sh)
+kineticenergy mom den = Acc.zipWith (\m d -> (quadrance m) / 2.0 / d) mom den
+ 
+velocity :: Shape sh => Acc (MomentumField sh) -> Acc (DensityField sh) -> Acc (VelocityField sh) 
+velocity mom den = Acc.zipWith (\m d -> m ^/ d) mom den 
 
-velocity :: Fractional a => Fluid a -> Velocity a 
-velocity (momentum, density) = momentum ^/ density
+pressure :: Shape sh => Exp Double -> Acc (EnergyField sh) -> Acc (EnergyField sh) -> Acc (EnergyField sh) -> Acc (PressureField sh) 
+pressure gamma total kinetic magnetic = 
+    Acc.zipWith3 (\ t k m -> (gamma - 1)*(t - k - m)) total kinetic magnetic
 
-density :: Fractional a => Fluid a -> Density a 
-density (_,density) = density
+totalPressure :: Shape sh => Acc (PressureField sh) -> Acc (EnergyField sh) -> Acc (PressureField sh) 
+totalPressure p em = Acc.zipWith (+) p em 
 
-primFluid :: Fractional a => Fluid a -> PrimFluid a 
-primFluid fluid = (velocity fluid, density) where (_,density) = fluid 
+csound2 :: Shape sh => Exp Double -> Acc (PressureField sh) -> Acc (DensityField sh) -> Acc (SpeedField sh) 
+csound2 gamma pressure density = Acc.zipWith (\p d -> gamma * p / d) pressure density
 
-consFluid :: Fractional a => PrimFluid a -> Fluid a 
-consFluid (velocity, density) = (velocity ^* density, density) 
+monoatomic_gamma :: Exp Double 
+monoatomic_gamma = constant (5/3)
 
---quadrance is their funny name for length squared
-ekin:: Fractional a => Fluid a -> Energy a 
-ekin (momentum, density) = lensq / 2.0 / density
-                            where lensq = quadrance momentum
-
-type Magnetic a = V3 a
-
-type MHD1 a = (Fluid a, Energy a, Magnetic a)
-type PrimMHD1 a = (PrimFluid a, Pressure a, Magnetic a)
-
-emag:: Fractional a => Magnetic a -> Energy a 
-emag mag = lensq / 2.0 where lensq = quadrance mag
-
-
-pressurePlasma1 :: Fractional a => a -> MHD1 a -> Pressure a 
-pressurePlasma1 gamma (fluid, energy, mag) = (gamma - 1.0) * energy - ekin fluid - emag mag 
-
-pressureTotal1 :: Fractional a => a -> MHD1 a -> Pressure a  
-pressureTotal1 gamma mhdFluid = pressurePlasma1 gamma mhdFluid + emag mag 
-                                    where (_,_,mag) = mhdFluid 
-
-primMHD1 :: Fractional a => a -> MHD1 a -> PrimMHD1 a
-primMHD1 gamma mhdFluid = (primfluid, pressure, magnetic)
-                            where
-                                (fluid,_,magnetic) = mhdFluid
-                                primfluid = primFluid fluid
-                                pressure = pressurePlasma1 gamma mhdFluid
-
-consMHD1 :: Fractional a => a -> PrimMHD1 a -> MHD1 a
-consMHD1 gamma primMHDFluid = (fluid, energy, magnetic) 
-                                where 
-                                    (primFluid, pressure, magnetic) = primMHDFluid
-                                    fluid = consFluid primFluid
-                                    energy = pressure / gamma + ekin fluid + emag magnetic
-
-
-squareSound:: Fractional a => a -> MHD1 a -> a 
-squareSound gamma mhd = gamma * (pressurePlasma1 gamma mhd) / density fluid 
-                            where (fluid, _, _) = mhd 
-
-cmax :: Floating a => a -> (Lens' (V3 a) a) -> MHD1 a -> a
-cmax gamma l mhdFluid = currvel + sound 
+cmax :: Shape sh =>Exp (V3 Double) ->Acc (DensityField sh) -> Acc (MomentumField sh) -> Acc (EnergyField sh)  -> Acc (MagneticField sh) -> Acc (SpeedField sh)
+cmax dir den mom ener mag = Acc.zipWith (+) currvel sound 
                         where
-                            (fluid,energy,magnetic) = mhdFluid
-                            bd = magnetic ^. l --magnetic field along direction of travel
-                            vd = (velocity fluid) ^. l --velocity along direction of travel
-                            dens = density fluid
-                            currvel = abs (vd / dens)
-                            csound2 = squareSound gamma mhdFluid
-                            cfast2 = csound2 + (quadrance magnetic) / dens
-                            sound = sqrt (0.5 * cfast2 + sqrt(cfast2 - 4*csound2*(bd / dens)))
+                            gamma = monoatomic_gamma
+                            magd = Acc.map (\b -> dot b dir) mag
+                            vd = Acc.map (\v -> dot v dir) (velocity mom den) 
+                            currvel = Acc.zipWith (\v d -> abs (v/d)) vd den
+                            c2 = csound2 gamma (pressure gamma ener (kineticenergy mom den) (magneticenergy mag)) den
+                            alfen2 = Acc.zipWith (\ b d -> (quadrance b) / d) mag den
+                            cfast2 = Acc.zipWith (+) c2 alfen2
+                            sound = Acc.zipWith4 (\c cf b d ->  sqrt (0.5 * cf + sqrt(cf - 4*c*(b /d)))) cfast2 c2 magd den
 
--- perp sets the direction of the vector along the lens to zero
--- this means that the remainder of the vector is perpendicular to 
--- the lens axis
-perp :: Num a => (Lens' (f a) a) -> f a -> f a
-perp l v = v & l .~ 0
+type MHD sh = (DensityField sh, MomentumField sh, EnergyField sh, MagneticField sh)
 
-flux :: Fractional a => a -> (Lens' (V3 a) a) -> MHD1 a -> MHD1 a 
-flux gamma dir mhd = ((momflux,denflux),enerflux,magflux)
-                            where 
-                                pt = pressureTotal1 gamma mhd
-                                (fluid, ener, mag) = mhd
-                                (mom,den) = fluid
-                                v = mom ^/ den -- velocity vector
-                                vi = v^.dir  -- velocity along direction of derivative
-                                bi = mag ^.dir  -- magnetic component along direction of derivative
-                                n = zero & dir .~ 1.0 -- unit vector along direction of derivative
-                                denflux = vi*den
-                                momflux = vi * den *^ v ^-^ bi *^ mag + den *^ n 
-                                enerflux = vi*ener - bi  * (dot mag v) + vi*den
-                                magflux = vi *^ mag - bi *^ v
+mhdflux :: Shape sh => (Exp (V3 Double)) -> Acc (MHD sh) -> Acc (MHD sh)
+mhdflux dir mhd = lift (fden,fmom,fener,fmag)
+                            where
+                                (den,mom,ener,mag) = unlift mhd
+                                gamma = monoatomic_gamma --plasma has no molecules
+                                emag = magneticenergy mag 
+                                ekin = kineticenergy mom den
+                                ptot = totalPressure (pressure gamma ener ekin emag) emag
+                                vel = velocity mom den
+                                fden = Acc.zipWith (\v d -> (dot dir v) * d) vel den 
+                                fmom = Acc.zipWith4 (\v m b p -> (dot dir v)*^m ^-^ (dot dir b)*^b ^+^ p*^dir) vel mom mag ptot
+                                fener =  Acc.zipWith5 (\v e b d em -> (dot v dir) * (e + d + em) - (dot b dir) * (dot b v)) vel ener mag den emag
+                                fmag = Acc.zipWith (\b v -> (dot dir v)*^b ^-^ (dot b dir)*^v) mag vel
 
 
---TODO: state projection and flux functions
 
+mhdproject :: Shape sh => ((Exp Double,Exp Double,Exp Double)->Exp Double) -> Acc (MHD sh, MHD sh, MHD sh) -> Acc (MHD sh) 
