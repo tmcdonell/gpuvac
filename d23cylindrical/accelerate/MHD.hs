@@ -85,7 +85,3 @@ projectMHDArray limiter p c n = lift (u,d)
                             projmag = projectVectorArray limiter pmag cmag nmag
                             u = (afst projden,afst projmom,afst projener,afst projmag)
                             d = (asnd projden,asnd projmom,asnd projener,asnd projmag)
-
-instance Shape sh => Advect (MHD sh) (MHD sh) where 
-    projection = projectMHDArray
-    flux = mhdflux 

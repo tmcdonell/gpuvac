@@ -70,3 +70,18 @@ projectScalarArray limiter p c n = arrayProjection (scalarProjector limiter) p c
 
 projectVectorArray :: Shape sh => (Exp Double -> Exp Double -> Exp Double-> Exp Double) -> Acc (Array sh (V3 Double)) -> Acc (Array sh (V3 Double)) -> Acc (Array sh (V3 Double)) -> Acc (Array sh (V3 Double), Array sh (V3 Double))
 projectVectorArray limiter p c n = arrayProjection (vectorProjector limiter) p c n 
+
+
+--
+--ktscheme :: (Ord a,Floating a,Advect b) => (b->a) -> b -> b -> b
+--ktscheme sc l r = scale (fromRational 0.5) $ fr + fl - scale s (r-l)
+--                    where 
+--                        s = max (sc l) (sc r)
+--                        fr = flux r
+--                        fl = flux l
+--
+--tvdmusclf :: Exp (V3 Double) -> (a,a) -> (b,b) -> (a,a) 
+--tvdmusclf dir (uf, df) (us,ds) = (f,f)
+--                    where 
+--                        f = uf - df + scale (speed (average us ds)) (us - ds)
+--
