@@ -7,6 +7,7 @@ import qualified Prelude as P
 import Data.Array.Accelerate as Acc 
 import Data.Array.Accelerate.Linear
 import Control.Lens 
+import Limits
 
 type PressureField sh = Array sh Double 
 type MagneticField sh = Array sh (V3 Double)
@@ -68,5 +69,15 @@ mhdflux dir mhd = lift (fden,fmom,fener,fmag)
                                 fmag = Acc.zipWith (\b v -> (dot dir v)*^b ^-^ (dot b dir)*^v) mag vel
 
 
-
-mhdproject :: Shape sh => ((Exp Double,Exp Double,Exp Double)->Exp Double) -> Acc (MHD sh, MHD sh, MHD sh) -> Acc (MHD sh) 
+projectMHDArray :: Shape sh => (Exp Double -> Exp Double -> Exp Double-> Exp Double) -> Acc (MHD sh) -> Acc (MHD sh) -> Acc (MHD sh) -> Acc (MHD sh, MHD sh) 
+projectMHDArray limiter p c n = lift (u,d)
+                        where
+                            (pden,pmom,pener,pmag) = unlift p
+                            (cden,cmom,cener,cmag) = unlift c
+                            (nden,nmom,nener,nmag) = unlift n
+                            projden = projectScalarArray limiter pden cden nden
+                            projmom = projectVectorArray limiter pmom cmom nmom
+                            projener = projectScalarArray limiter pener cener nener
+                            projmag = projectVectorArray limiter pmag cmag nmag
+                            u = (afst projden,afst projmom,afst projener,afst projmag)
+                            d = (asnd projden,asnd projmom,asnd projener,asnd projmag)
