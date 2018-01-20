@@ -72,6 +72,13 @@ projectVectorArray :: Shape sh => (Exp Double -> Exp Double -> Exp Double-> Exp 
 projectVectorArray limiter p c n = arrayProjection (vectorProjector limiter) p c n 
 
 
+-- the TVD method looks at the flux and state on either side of an interface
+-- and then determines the downstream flux
+-- for hancock we just use the upstream and downstream flux as the upstream and 
+-- downstream flux respectively
+hancock :: forall a b. Exp (V3 Double) -> (a,a) -> (b,b) -> (a,a)
+hancock _ (uf,df) _ = (uf,df) 
+
 --
 --ktscheme :: (Ord a,Floating a,Advect b) => (b->a) -> b -> b -> b
 --ktscheme sc l r = scale (fromRational 0.5) $ fr + fl - scale s (r-l)
