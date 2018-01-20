@@ -41,10 +41,32 @@ vectorlimit limiter p c n = lift tuple
                                 tuple :: V3 (Exp Double)
                                 tuple = liftA3 limiter up uc un
 
---projectScalar :: Shape sh => (Exp Double,Exp Double,Exp Double)->Exp Double) -> Acc (Array sh Double, Array sh Double, Array sh Double) -> Acc (Array sh Double, Array sh Double)
---projectScalar limiter pcn = lift (u,d) 
---                                where 
---                                    (p,c,n) = unlift pcn 
---                                    Acc.zipWith3 (,,) 
+scalarProjector :: (Exp Double -> Exp Double -> Exp Double -> Exp Double) -> Exp Double -> Exp Double -> Exp Double -> Exp (Double, Double)
+scalarProjector limiter p c n = lift (u,d) 
+                        where 
+                            s = limiter p c n
+                            u = c - 0.5*s 
+                            d = c + 0.5*s 
+
+vectorProjector :: (Exp Double -> Exp Double -> Exp Double -> Exp Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double,V3 Double)
+vectorProjector limiter p c n = lift (P.fmap fst tuple, P.fmap snd tuple) 
+                                        where
+                                            up :: V3 (Exp Double) 
+                                            up = unlift p 
+                                            uc :: V3 (Exp Double) 
+                                            uc = unlift c 
+                                            un :: V3 (Exp Double) 
+                                            un = unlift n 
+                                            tuple :: V3 (Exp (Double, Double))
+                                            tuple = liftA3 (scalarProjector limiter) up uc un
+
+arrayProjection ::(Elt a, Shape sh) => (Exp a -> Exp a -> Exp a -> Exp (a,a)) -> Acc (Array sh a) -> Acc (Array sh a) -> Acc (Array sh a) -> Acc (Array sh a, Array sh a)
+arrayProjection projector p c n = lift $ unzip proj where 
+                        proj = Acc.zipWith3 projector p c n 
 
 
+projectScalarArray :: Shape sh => (Exp Double -> Exp Double -> Exp Double-> Exp Double) -> Acc (Array sh Double) -> Acc (Array sh Double) -> Acc (Array sh Double) -> Acc (Array sh Double, Array sh Double)
+projectScalarArray limiter p c n = arrayProjection (scalarProjector limiter) p c n 
+
+projectVectorArray :: Shape sh => (Exp Double -> Exp Double -> Exp Double-> Exp Double) -> Acc (Array sh (V3 Double)) -> Acc (Array sh (V3 Double)) -> Acc (Array sh (V3 Double)) -> Acc (Array sh (V3 Double), Array sh (V3 Double))
+projectVectorArray limiter p c n = arrayProjection (vectorProjector limiter) p c n 
