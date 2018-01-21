@@ -33,6 +33,9 @@ type Geom = (V3 (V3 Double, V3 Double),Double)
 stencil1D :: Elt a => (Exp a, Exp a, Exp a, Exp a, Exp a) -> Exp (a,a,a,a,a) 
 stencil1D (pp,p,c,n,nn) = lift (pp,p,c,n,nn) 
 
+stencil2D :: Elt a => (Exp a, Exp a, (Exp a, Exp a, Exp a, Exp a, Exp a), Exp a, Exp a) -> Exp ((a,a,a,a,a),(a,a,a,a,a)) 
+stencil2D (ppy,py,(ppx,px,c,nx,nnx),ny,nny) = lift ((ppx,px,c,nx,nnx),(ppy,py,c,ny,nny)) 
+
 interpStep :: (Interp state,Shape sh) => Acc (Array sh state) ->Acc (Array sh state) ->Acc (Array sh state) -> (Acc (Array sh state), Acc (Array sh state))
 interpStep p c n = unzip $ Acc.zipWith3 interp p c n 
 
