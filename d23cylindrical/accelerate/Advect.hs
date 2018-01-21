@@ -30,11 +30,11 @@ class (Elt diff, Elt state) => Integrate diff state | state -> diff where
 
 type Geom = (V3 (V3 Double, V3 Double),Double) 
 
---stencil1D (pp,p,c,n,nn) = lift (pp,p,c,n,nn) 
+stencil1D :: Elt a => (Exp a, Exp a, Exp a, Exp a, Exp a) -> Exp (a,a,a,a,a) 
+stencil1D (pp,p,c,n,nn) = lift (pp,p,c,n,nn) 
 
 interpStep :: (Interp state,Shape sh) => Acc (Array sh state) ->Acc (Array sh state) ->Acc (Array sh state) -> (Acc (Array sh state), Acc (Array sh state))
 interpStep p c n = unzip $ Acc.zipWith3 interp p c n 
-
 
 --core of the advection flux calculation algorithm
 advect :: (Shape sh, Interp state, Flux state fl) => Acc (Array sh (V3 Double, V3 Double)) -> Acc (Array sh (state,state,state,state,state)) -> Acc (Array sh (fl,fl)) 
