@@ -63,6 +63,14 @@ cmax dir den mom ener mag = currvel + sound
 
 type MHD = (Density, Momentum, Energy, Magnetic)
 
+mhdmax :: Exp (V3 Double) -> Exp MHD -> Exp Speed 
+mhdmax dir mhd = cmax dir den mom ener mag where 
+        (den,mom,ener,mag) = unlift mhd 
+
+mhdscale :: Exp Double -> Exp MHD -> Exp MHD 
+mhdscale amt mhd = lift (amt*den,amt*^mom,amt*ener,amt*^mag)
+                        where (den,mom,ener,mag) = unlift mhd
+
 mhdflux :: Exp (V3 Double) -> Exp MHD -> Exp MHD
 mhdflux dir mhd = lift (fden,fmom,fener,fmag)
                             where
@@ -80,6 +88,7 @@ mhdflux dir mhd = lift (fden,fmom,fener,fmag)
                                 fmag = (vd*^mag) ^-^ (bd*^vel)
 
 
+--perform forwards and backwards projection with conservative variables
 conservativeMHDProject :: (Exp Double -> Exp Double -> Exp Double-> Exp Double) -> Exp MHD -> Exp MHD -> Exp MHD -> Exp (MHD,MHD)
 conservativeMHDProject limiter p c n = lift (u,d)
                         where
@@ -94,6 +103,7 @@ conservativeMHDProject limiter p c n = lift (u,d)
                             d = (snd projden,snd projmom,snd projener,snd projmag)
 
 
+--perform forwards and backwards projections with primative (pressure velocity) variables
 primativeMHDProject :: (Exp Double -> Exp Double -> Exp Double-> Exp Double) -> Exp MHD -> Exp MHD -> Exp MHD -> Exp (MHD,MHD)
 primativeMHDProject limiter p c n = lift (u,d)
                         where
