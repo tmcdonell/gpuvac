@@ -53,7 +53,6 @@ type Fluxer vec state flux = Exp (vec Double) -> Exp (state,state) -> Exp (flux,
 type Patch order  = order (order Double, order Double) 
 type Geom order  = (Patch order,Double)
 
-
 createFlux :: forall v state flux. 
                 (P.Monad v,Elt state, Elt flux,Elt (v Double),
                 Box v ((state,state),(state,state)),
@@ -78,6 +77,25 @@ createFlux fluxer cellgeom projected_state = lift fluxes where
                         let uf = snd leftf
                         let df = fst rightf
                         P.return $ lift (uf,df)
+
+type Differ vec flux diff = Exp Double -> Exp (vec (flux,flux)) -> Exp diff 
+
+cellcomp :: forall v state flux diff. 
+            (P.Monad v,Elt state, Elt flux,Elt diff,Elt (v Double),
+            Box v ((state,state),(state,state)),
+            Box v (v Double, v Double),
+            Elt (Patch v), 
+            Box v (flux,flux),Box v Double) => Fluxer v state flux -> Differ v flux diff -> Exp (Geom v) -> Exp (v ((state,state),(state,state))) -> Exp diff
+cellcomp fluxer differ geom states = derivative
+                        where 
+                            patch :: Exp (Patch v) 
+                            patch = fst geom 
+                            vol :: Exp Double
+                            vol = snd geom
+                            fluxes :: Exp (v (flux,flux))
+                            fluxes = createFlux fluxer patch states 
+                            derivative = differ vol fluxes 
+
 
 
 
