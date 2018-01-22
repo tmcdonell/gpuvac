@@ -81,29 +81,6 @@ createFlux fluxer cellgeom projected_state = lift fluxes where
 
 
 
-----core of the advection flux calculation algorithm
---advect :: (Interp state, Flux state fl) => Exp (V3 Double, V3 Double) -> (Exp state, Exp state, Exp state, Exp state,Exp state) -> Exp (fl,fl) 
---advect areas state = lift (uflux,dflux) where
---                    (pp,p,c,n,nn) = state
---                    (_,dp) = step pp p c
---                    (uc,dc) =  step p c n
---                    (un,_) =  step c n nn
---                    unorm :: Exp (V3 Double)
---                    dnorm :: Exp (V3 Double) 
---                    (unorm,dnorm) =  unlift $ areas
---                    ustate =  lift (dp,uc)
---                    dstate =  lift (dc,un) 
---                    (_,uflux) =  unlift $ flux unorm ustate
---                    (dflux,_) =   unlift $ flux dnorm dstate
-
---advect1D :: (Interp state, Flux state flux) => Acc (Array DIM1 (V3 (V3 Double,V3 Double))) -> Boundary (Array DIM1 state) -> Acc (Array DIM1 state) -> Acc (Array DIM1 (V1 (flux,flux))) 
---advect1D geom bound input = fl where
---                            area1 :: Acc (Array DIM1 (V3 Double, V3 Double))
---                            area1 = Acc.map (\v -> v^._x) geom
---                            sten = stencil stencil1D bound 
---                            st = sten input
---                            fl1 = advect area1 st
---                            fl = Acc.map (lift.V1) fl1 
 
 
 
