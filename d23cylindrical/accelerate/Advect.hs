@@ -1,5 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Advect where 
 
 import qualified Prelude as P 
@@ -30,16 +32,16 @@ stencil1D :: Elt a => Projector a -> Stencil5 a -> Exp (V1 ((a,a),(a,a)))
 stencil1D prj vals = lift . V1 $ proj prj vals
 
 stencil2D :: Elt a => Projector a ->Stencil5x5 a -> Exp (V2 ((a,a),(a,a)))
-stencil2D prj (ppy,py,c,ny,nny) = lift $ V2 (d1^._x) dn 
+stencil2D prj (ppx,px,c,nx,nnx) = lift $ V2 dn (d1^._x) 
             where 
                 d1 = unlift $ stencil1D prj c 
-                dn = proj prj (ppy^._3,py^._3,c^._3,ny^._3,nny^._3) 
+                dn = proj prj (ppx^._3,px^._3,c^._3,nx^._3,nnx^._3) 
 
 stencil3D :: Elt a => Projector a -> Stencil5x5x5 a -> Exp (V3 ((a,a),(a,a)))
-stencil3D prj (ppz,pz,c,nz,nnz) = lift $ V3 (d2^._x) (d2^._y) dn 
+stencil3D prj (ppx,px,c,nx,nnx) = lift $ V3 dn (d2^._x) (d2^._y) 
             where
                 d2 = unlift $ stencil2D prj c
-                dn = proj prj (ppz^._3^._3,pz^._3^._3,c^._3^._3,nz^._3^._3,nnz^._3^._3)
+                dn = proj prj (ppx^._3^._3,px^._3^._3,c^._3^._3,nx^._3^._3,nnx^._3^._3)
 
 -- A fluxer takes a quantity dA which is a vector with a magnitude equal to the cell boundry area
 -- and the direction normal to the surface in the direction of the downstream cell 
@@ -48,42 +50,35 @@ stencil3D prj (ppz,pz,c,nz,nnz) = lift $ V3 (d2^._x) (d2^._y) dn
 -- same for a conservative method.
 type Fluxer vec state flux = Exp (vec Double) -> Exp (state,state) -> Exp (flux,flux) 
 
-type Patch order dir  = order (dir Double, dir Double) 
-type Geom order dir  = (Patch order dir,Double)
+type Patch order  = order (order Double, order Double) 
+type Geom order  = (Patch order,Double)
 
 
-type Blox f a = (Elt (f a), Unlift Exp (f (Exp a)), Plain (f (Exp a)) ~ f a)
-
-createFlux :: forall v v2 state flux.
-       ( Applicative v, Elt state, Elt flux
-       , Blox v ((state,state), (state,state))
-       , Blox v (v2 Double, v2 Double)
-       , Blox v (flux,flux)
-       , Blox v2 Double
-       ) => Fluxer v2 state flux -> Exp (Patch v v2) -> Exp (v ((state,state),(state,state))) -> Exp (v (flux,flux))
+createFlux :: forall v state flux. 
+                (P.Monad v,Elt state, Elt flux,Elt (v Double),
+                Box v ((state,state),(state,state)),
+                Box v (v Double, v Double),
+                Box v (flux,flux),Box v Double) =>
+                Fluxer v state flux -> Exp (Patch v) -> Exp (v ((state,state),(state,state))) -> Exp (v (flux,flux))
 createFlux fluxer cellgeom projected_state = lift fluxes where
-                    norms :: v (Exp (v2 Double, v2 Double))
+                    norms :: v (Exp (v Double, v Double))
                     norms = unlift cellgeom
-                    leftnorm :: v (Exp (v2 Double))
-                    leftnorm = P.fmap fst norms 
-                    rightnorm :: v (Exp (v2 Double))
-                    rightnorm = P.fmap snd norms
                     states :: v (Exp ((state,state),(state,state)))
                     states = unlift projected_state
-                    leftstates :: v (Exp (state,state))
-                    leftstates = P.fmap fst states
-                    rightstates :: v (Exp (state,state))
-                    rightstates = P.fmap snd states 
-                    leftfluxes :: v (Exp (flux,flux))
-                    leftfluxes = liftA2 fluxer leftnorm leftstates
-                    rightfluxes :: v (Exp (flux,flux))
-                    rightfluxes = liftA2 (fluxer) rightnorm rightstates
-                    uf :: v (Exp flux) 
-                    uf = P.fmap fst leftfluxes
-                    df :: v (Exp flux) 
-                    df = P.fmap snd rightfluxes
                     fluxes :: v (Exp (flux,flux))
-                    fluxes = liftA2 (\x y -> lift (x,y)) uf df
+                    fluxes = do 
+                        n <- norms 
+                        s <- states
+                        let leftn = fst n
+                        let rightn = snd n
+                        let lefts = fst s
+                        let rights = snd s
+                        let leftf = fluxer leftn lefts
+                        let rightf = fluxer rightn rights
+                        let uf = snd leftf
+                        let df = fst rightf
+                        P.return $ lift (uf,df)
+
 
 
 ----core of the advection flux calculation algorithm
