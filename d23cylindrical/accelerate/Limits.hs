@@ -41,15 +41,15 @@ vectorlimit limiter p c n = lift tuple
                                 tuple :: V3 (Exp Double)
                                 tuple = liftA3 limiter up uc un
 
-scalarProjector :: (Exp Double -> Exp Double -> Exp Double -> Exp Double) -> Exp Double -> Exp Double -> Exp Double -> Exp (Double, Double)
-scalarProjector limiter p c n = lift (u,d) 
+projectScalar :: (Exp Double -> Exp Double -> Exp Double -> Exp Double) -> Exp Double -> Exp Double -> Exp Double -> Exp (Double, Double)
+projectScalar limiter p c n = lift (u,d) 
                         where 
                             s = limiter p c n
                             u = c - 0.5*s 
                             d = c + 0.5*s 
 
-vectorProjector :: (Exp Double -> Exp Double -> Exp Double -> Exp Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double,V3 Double)
-vectorProjector limiter p c n = lift (P.fmap fst tuple, P.fmap snd tuple) 
+projectVector :: (Exp Double -> Exp Double -> Exp Double -> Exp Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double,V3 Double)
+projectVector limiter p c n = lift (P.fmap fst tuple, P.fmap snd tuple) 
                                         where
                                             up :: V3 (Exp Double) 
                                             up = unlift p 
@@ -58,26 +58,16 @@ vectorProjector limiter p c n = lift (P.fmap fst tuple, P.fmap snd tuple)
                                             un :: V3 (Exp Double) 
                                             un = unlift n 
                                             tuple :: V3 (Exp (Double, Double))
-                                            tuple = liftA3 (scalarProjector limiter) up uc un
+                                            tuple = liftA3 (projectScalar limiter) up uc un
 
-arrayProjection ::(Elt a, Shape sh) => (Exp a -> Exp a -> Exp a -> Exp (a,a)) -> Acc (Array sh a) -> Acc (Array sh a) -> Acc (Array sh a) -> Acc (Array sh a, Array sh a)
-arrayProjection projector p c n = lift $ unzip proj where 
-                        proj = Acc.zipWith3 projector p c n 
-
-
-projectScalarArray :: Shape sh => (Exp Double -> Exp Double -> Exp Double-> Exp Double) -> Acc (Array sh Double) -> Acc (Array sh Double) -> Acc (Array sh Double) -> Acc (Array sh Double, Array sh Double)
-projectScalarArray limiter p c n = arrayProjection (scalarProjector limiter) p c n 
-
-projectVectorArray :: Shape sh => (Exp Double -> Exp Double -> Exp Double-> Exp Double) -> Acc (Array sh (V3 Double)) -> Acc (Array sh (V3 Double)) -> Acc (Array sh (V3 Double)) -> Acc (Array sh (V3 Double), Array sh (V3 Double))
-projectVectorArray limiter p c n = arrayProjection (vectorProjector limiter) p c n 
 
 
 -- the TVD method looks at the flux and state on either side of an interface
 -- and then determines the downstream flux
 -- for hancock we just use the upstream and downstream flux as the upstream and 
 -- downstream flux respectively
-hancock :: forall a b. Exp (V3 Double) -> (a,a) -> (b,b) -> (a,a)
-hancock _ (uf,df) _ = (uf,df) 
+hancock :: a -> b -> c -> b
+hancock _ k _ = k 
 
 --
 --ktscheme :: (Ord a,Floating a,Advect b) => (b->a) -> b -> b -> b
