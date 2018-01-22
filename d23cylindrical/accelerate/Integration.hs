@@ -7,12 +7,10 @@ module Integration where
 import qualified Prelude as P 
 import Data.Array.Accelerate as Acc
 
+type Accumulator diff state = Exp Double -> Exp diff -> Exp state -> Exp state
 
-class (Elt diff, Elt state) => Integrate diff state | state -> diff where 
-    integrate :: Exp Double -> Exp diff -> Exp state -> Exp state 
-
-twostep :: (Shape sh, Integrate diff state) => (Acc (Array sh state) -> Acc (Array sh diff)) -> (Acc (Array sh state) -> Acc (Array sh diff)) -> Exp Double -> Acc (Array sh state) -> Acc (Array sh state) 
-twostep predict advance time start = final 
+twostep :: (Shape sh, Elt diff, Elt state) => Accumulator diff state -> (Acc (Array sh state) -> Acc (Array sh diff)) -> (Acc (Array sh state) -> Acc (Array sh diff)) -> Exp Double -> Acc (Array sh state) -> Acc (Array sh state) 
+twostep integrate predict advance time start = final 
             where
                 step t d u = Acc.zipWith (\di st -> integrate t di st) d u 
                 du_start = predict start
