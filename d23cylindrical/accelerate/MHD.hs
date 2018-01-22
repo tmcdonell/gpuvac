@@ -71,6 +71,14 @@ mhdscale :: Exp Double -> Exp MHD -> Exp MHD
 mhdscale amt mhd = lift (amt*den,amt*^mom,amt*ener,amt*^mag)
                         where (den,mom,ener,mag) = unlift mhd
 
+mhdmerge :: Exp MHD -> Exp MHD -> Exp MHD 
+mhdmerge a b = lift (aden+bden, amom ^+^ bmom, aener+bener, amag^+^bmag) 
+                        where
+                            aden :: Exp Density --not sure why these types are needed
+                            aener :: Exp Energy
+                            (aden,amom, aener,amag) = unlift a 
+                            (bden,bmom, bener,bmag) = unlift b
+
 mhdflux :: Exp (V3 Double) -> Exp MHD -> Exp MHD
 mhdflux dir mhd = lift (fden,fmom,fener,fmag)
                             where
