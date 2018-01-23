@@ -22,16 +22,16 @@ proj prj (pp,p,c,n,nn) = lift $ (us,ds)
     us = (pd,fst cen)
     ds = (snd cen,nu)
 
-stencil1D :: Elt a => Projector a -> Stencil5 a -> Exp (V1 ((a,a),(a,a)))
+stencil1D :: Elt state => Projector state -> Stencil5 state -> Exp (V1 ((state,state),(state,state)))
 stencil1D prj vals = lift . V1 $ proj prj vals
 
-stencil2D :: Elt a => Projector a ->Stencil5x5 a -> Exp (V2 ((a,a),(a,a)))
+stencil2D :: Elt state => Projector state ->Stencil5x5 state -> Exp (V2 ((state,state),(state,state)))
 stencil2D prj (ppx,px,c,nx,nnx) = lift $ V2 dn (d1^._x) 
             where 
                 d1 = unlift $ stencil1D prj c 
                 dn = proj prj (ppx^._3,px^._3,c^._3,nx^._3,nnx^._3) 
 
-stencil3D :: Elt a => Projector a -> Stencil5x5x5 a -> Exp (V3 ((a,a),(a,a)))
+stencil3D :: Elt state => Projector state -> Stencil5x5x5 state -> Exp (V3 ((state,state),(state,state)))
 stencil3D prj (ppx,px,c,nx,nnx) = lift $ V3 dn (d2^._x) (d2^._y) 
             where
                 d2 = unlift $ stencil2D prj c
@@ -63,7 +63,6 @@ createFlux fluxer cellgeom projected_state = lift fluxes where
                         P.return $ lift (uf,df)
 
 
-
 cellcomp :: forall v state flux diff. 
             (P.Monad v,Elt state, Elt flux,Elt diff,Elt (v Double),
             Box v ((state,state),(state,state)),
@@ -81,6 +80,13 @@ cellcomp fluxer differ geom states = derivative
                             derivative = differ vol fluxes 
 
 
+advect3D :: forall  state flux diff. 
+    (Elt state, Elt flux,Elt diff)=> Projector state -> Fluxer V3 state flux -> Differ V3 flux diff -> Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 state) -> Acc (Array DIM3 diff)
+advect3D proj flux diff geom input = derivative 
+                            where 
+                                projected_states = stencil (stencil3D proj) wrap input :: Acc (Array DIM3 (V3 ((state,state),(state,state))))
+                                cellcomputer g s = cellcomp flux diff g s :: Exp diff
+                                derivative = Acc.zipWith cellcomputer geom projected_states :: Acc (Array DIM3 diff) 
 
 
 
