@@ -28,6 +28,17 @@ type Projector a = Exp a -> Exp a -> Exp a -> Exp (a,a)
 -- hancock or kt would be encoded within this function
 type Fluxer vec state flux = Exp (vec Double) -> Exp (state,state) -> Exp (flux,flux) 
 
+-- A FluxFunc is exactly what you would expect for an advective problem
+-- it takes a surface patch normal and a state at said surface to get the
+-- onesided surface flux
+type FluxFunc v state flux = Exp (v Double) -> Exp state -> Exp flux
+
+-- add two complex types together 
+type Merger a = Exp a -> Exp a -> Exp a 
+
+-- Scale the variables in a given state
+type Scaler state = Exp Double -> Exp state -> Exp state 
+
 -- A Differ is responsible for taking the cell volume, as well as a vector of 
 -- flux pairs and reducing that to a time derivative. 
 type Differ vec flux diff = Exp Double -> Exp (vec (flux,flux)) -> Exp diff 
@@ -37,3 +48,5 @@ type Differ vec flux diff = Exp Double -> Exp (vec (flux,flux)) -> Exp diff
 -- the result should be essentially final = intial + dt * du_dt. However, this allows 
 -- for time derivative to be of a different shape and type to your state variable.
 type Accumulator diff state = Exp Double -> Exp diff -> Exp state -> Exp state
+
+
