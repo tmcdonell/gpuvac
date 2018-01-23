@@ -12,6 +12,20 @@ import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear
 import Types 
 
+-- the TVD method looks at the flux and state on either side of an interface
+-- and then determines the downstream flux
+-- for hancock we just use the upstream and downstream flux as the upstream and 
+-- downstream flux respectively
+hancock :: (Elt flux, Elt state) => FluxFunc v state flux -> Fluxer v state flux 
+hancock f dir states = lift $ (f dir $ fst states, f dir $ snd states)
+
+
+average :: (Elt flux, Elt state) =>  Merger flux -> Scaler flux -> FluxFunc v state flux -> Fluxer v state flux
+average m s f dir states = lift (avg,avg) where
+                                left = f dir $ fst states 
+                                right = f dir $ snd states
+                                avg = s 0.5 $ m left right 
+
 
 proj :: Elt a => Projector a -> Stencil5 a -> Exp ((a,a),(a,a))
 proj prj (pp,p,c,n,nn) = lift $ (us,ds) 
@@ -82,13 +96,11 @@ cellcomp fluxer differ geom states = derivative
 
 advection3D :: forall  state flux diff. 
     (Elt state, Elt flux,Elt diff)=> Projector state -> Fluxer V3 state flux -> Differ V3 flux diff -> Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 state) -> Acc (Array DIM3 diff)
-advect3D proj flux diff geom input = derivative 
+advection3D proj flux diff geom input = derivative 
                             where 
                                 projected_states = stencil (stencil3D proj) wrap input :: Acc (Array DIM3 (V3 ((state,state),(state,state))))
                                 cellcomputer g s = cellcomp flux diff g s :: Exp diff
                                 derivative = Acc.zipWith cellcomputer geom projected_states :: Acc (Array DIM3 diff) 
-
-
 
 
 

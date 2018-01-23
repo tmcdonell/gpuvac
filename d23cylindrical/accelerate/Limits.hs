@@ -1,3 +1,7 @@
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE FlexibleContexts #-}
 module Limits where
 
 import Control.Applicative
@@ -64,23 +68,3 @@ projectVector limiter p c n = lift (P.fmap fst tuple, P.fmap snd tuple)
 
 
 
--- the TVD method looks at the flux and state on either side of an interface
--- and then determines the downstream flux
--- for hancock we just use the upstream and downstream flux as the upstream and 
--- downstream flux respectively
-hancock :: a -> b -> c -> b
-hancock _ k _ = k 
-
---
---ktscheme :: (Ord a,Floating a,Advect b) => (b->a) -> b -> b -> b
---ktscheme sc l r = scale (fromRational 0.5) $ fr + fl - scale s (r-l)
---                    where 
---                        s = max (sc l) (sc r)
---                        fr = flux r
---                        fl = flux l
---
---tvdmusclf :: Exp (V3 Double) -> (a,a) -> (b,b) -> (a,a) 
---tvdmusclf dir (uf, df) (us,ds) = (f,f)
---                    where 
---                        f = uf - df + scale (speed (average us ds)) (us - ds)
---
