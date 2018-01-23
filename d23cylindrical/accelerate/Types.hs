@@ -3,6 +3,8 @@ module Types where
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear
 
+type Limiter = Exp Double -> Exp Double -> Exp Double -> Exp Double 
+
 -- type Patch is a vector of vector pairs, the first vector encodes which coordinate 
 -- frame we are travelling along, while the inner tuple contains the vectors encoding
 -- the upstream and downstream surface normals

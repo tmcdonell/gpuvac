@@ -5,8 +5,10 @@ import qualified Prelude as P
 import Data.Array.Accelerate as Acc 
 import Data.Array.Accelerate.Linear
 
+import Types
+
 --slope limited derivative
-dwlimiter2 :: Exp Double -> Exp Double -> Exp Double -> Exp Double
+dwlimiter2 :: Limiter
 dwlimiter2 p c n = 
     2.0 * s * maximum 
         where 
@@ -29,7 +31,7 @@ ratio p c n =  (c - p) / (n - c)
 slope :: (Exp Double -> Exp Double) -> Exp Double -> Exp Double -> Exp Double -> Exp Double
 slope limiter p c n = (limiter $ ratio p c n) * (n-c) 
 
-vectorlimit::(Exp Double -> Exp Double-> Exp Double ->Exp Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double)
+vectorlimit::Limiter -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double)
 vectorlimit limiter p c n = lift tuple
                             where
                                 up :: V3 (Exp Double) 
@@ -41,14 +43,14 @@ vectorlimit limiter p c n = lift tuple
                                 tuple :: V3 (Exp Double)
                                 tuple = liftA3 limiter up uc un
 
-projectScalar :: (Exp Double -> Exp Double -> Exp Double -> Exp Double) -> Exp Double -> Exp Double -> Exp Double -> Exp (Double, Double)
+projectScalar :: Limiter -> Exp Double -> Exp Double -> Exp Double -> Exp (Double, Double)
 projectScalar limiter p c n = lift (u,d) 
                         where 
                             s = limiter p c n
                             u = c - 0.5*s 
                             d = c + 0.5*s 
 
-projectVector :: (Exp Double -> Exp Double -> Exp Double -> Exp Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double,V3 Double)
+projectVector :: Limiter -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double) -> Exp (V3 Double,V3 Double)
 projectVector limiter p c n = lift (P.fmap fst tuple, P.fmap snd tuple) 
                                         where
                                             up :: V3 (Exp Double) 
