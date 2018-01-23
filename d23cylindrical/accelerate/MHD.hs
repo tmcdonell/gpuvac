@@ -9,7 +9,6 @@ import qualified Prelude as P
 
 import Data.Array.Accelerate as Acc 
 import Data.Array.Accelerate.Linear
-import Advect
 import Control.Lens 
 import Limits
 
@@ -79,8 +78,6 @@ mhdmerge a b = lift (aden+bden, amom ^+^ bmom, aener+bener, amag^+^bmag)
                             (aden,amom, aener,amag) = unlift a 
                             (bden,bmom, bener,bmag) = unlift b
 
-mhdaccum :: Exp Double -> Exp MHD -> Exp MHD -> Exp MHD 
-mhdaccum dt diff initial = mhdmerge initial $ mhdscale dt diff 
 
 mhdflux :: Exp (V3 Double) -> Exp MHD -> Exp MHD
 mhdflux dir mhd = lift (fden,fmom,fener,fmag)
