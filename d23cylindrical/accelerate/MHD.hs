@@ -63,8 +63,8 @@ cmax dir den mom ener mag = currvel + sound
 
 type MHD = (Density, Momentum, Energy, Magnetic)
 
-mhdmax :: Exp (V3 Double) -> Exp MHD -> Exp Speed 
-mhdmax dir mhd = cmax dir den mom ener mag where 
+mhdspeed :: Exp (V3 Double) -> Exp MHD -> Exp Speed 
+mhdspeed dir mhd = cmax dir den mom ener mag where 
         (den,mom,ener,mag) = unlift mhd 
 
 mhdscale :: Exp Double -> Exp MHD -> Exp MHD 
