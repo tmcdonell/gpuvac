@@ -10,8 +10,8 @@ import Control.Lens
 import Control.Applicative
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear
+import Types 
 
-type Projector a = Exp a -> Exp a -> Exp a -> Exp (a,a)
 
 proj :: Elt a => Projector a -> Stencil5 a -> Exp ((a,a),(a,a))
 proj prj (pp,p,c,n,nn) = lift $ (us,ds) 
@@ -37,15 +37,7 @@ stencil3D prj (ppx,px,c,nx,nnx) = lift $ V3 dn (d2^._x) (d2^._y)
                 d2 = unlift $ stencil2D prj c
                 dn = proj prj (ppx^._3^._3,px^._3^._3,c^._3^._3,nx^._3^._3,nnx^._3^._3)
 
--- A fluxer takes a quantity dA which is a vector with a magnitude equal to the cell boundry area
--- and the direction normal to the surface in the direction of the downstream cell 
--- it also takes the quanties of the left and right state at the cell boundry.
--- The result of this computation is the left and right fluxes which will be the 
--- same for a conservative method.
-type Fluxer vec state flux = Exp (vec Double) -> Exp (state,state) -> Exp (flux,flux) 
 
-type Patch order  = order (order Double, order Double) 
-type Geom order  = (Patch order,Double)
 
 createFlux :: forall v state flux. 
                 (P.Monad v,Elt state, Elt flux,Elt (v Double),
@@ -72,7 +64,7 @@ createFlux fluxer cellgeom projected_state = lift fluxes where
                         let df = fst rightf
                         P.return $ lift (uf,df)
 
-type Differ vec flux diff = Exp Double -> Exp (vec (flux,flux)) -> Exp diff 
+
 
 cellcomp :: forall v state flux diff. 
             (P.Monad v,Elt state, Elt flux,Elt diff,Elt (v Double),

@@ -7,7 +7,7 @@ module Integration where
 import qualified Prelude as P 
 import Data.Array.Accelerate as Acc
 
-type Accumulator diff state = Exp Double -> Exp diff -> Exp state -> Exp state
+import Types 
 
 twostep :: (Shape sh, Elt diff, Elt state) => Accumulator diff state -> (Acc (Array sh state) -> Acc (Array sh diff)) -> (Acc (Array sh state) -> Acc (Array sh diff)) -> Exp Double -> Acc (Array sh state) -> Acc (Array sh state) 
 twostep integrate predict advance time start = final 

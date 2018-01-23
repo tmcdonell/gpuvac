@@ -4,9 +4,8 @@ import qualified Prelude as P
 
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear
+import Types 
 
-type Patch order  = order (order Double, order Double) 
-type Geom order  = (Patch order,Double)
 
 cartesian3D :: (Double,Double) -> (Double,Double) -> (Double,Double) -> Exp DIM3 -> Exp DIM3 -> Exp (V3 Double,Geom V3)
 cartesian3D (xmin,xmax) (ymin,ymax) (zmin,zmax) dimensions index = lift (position, geom)
