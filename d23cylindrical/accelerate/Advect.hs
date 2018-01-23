@@ -80,7 +80,7 @@ cellcomp fluxer differ geom states = derivative
                             derivative = differ vol fluxes 
 
 
-advect3D :: forall  state flux diff. 
+advection3D :: forall  state flux diff. 
     (Elt state, Elt flux,Elt diff)=> Projector state -> Fluxer V3 state flux -> Differ V3 flux diff -> Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 state) -> Acc (Array DIM3 diff)
 advect3D proj flux diff geom input = derivative 
                             where 
