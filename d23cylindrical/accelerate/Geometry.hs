@@ -22,35 +22,35 @@ cartesian3D (xmin,xmax) (ymin,ymax) (zmin,zmax) dimensions index = lift (positio
                                         dAz = lift $ V3 0 0 (dx*dy) :: Exp (V3 Double) 
                                         patch = lift $ V3 (dAx,dAx) (dAy,dAy) (dAz,dAz) :: Exp (V3 (V3 Double, V3 Double))
                                         geom = lift $ (patch,dV) :: Exp (Geom V3) 
-                                        x = dx * (fromIntegral xpos / fromIntegral xsize) + dx/2.0 :: Exp Double 
-                                        y = dy * (fromIntegral ypos / fromIntegral ysize) + dy/2.0 :: Exp Double
-                                        z = dz * (fromIntegral zpos / fromIntegral zsize) + dz/2.0 :: Exp Double 
+                                        x = dx * (fromIntegral xpos / fromIntegral xsize) + dx/2.0 + constant xmin :: Exp Double 
+                                        y = dy * (fromIntegral ypos / fromIntegral ysize) + dy/2.0 + constant ymin :: Exp Double
+                                        z = dz * (fromIntegral zpos / fromIntegral zsize) + dz/2.0 + constant zmin:: Exp Double 
                                         position = lift $ V3 x y z :: Exp (V3 Double) 
 
 
-cylindrical3D :: (Double,Double) -> (Double,Double) -> (Double,Double) -> Exp sh -> Exp (V3 Double,Geom V3)
+cylindrical3D :: (Double,Double) -> (Double,Double) -> (Double,Double) -> Exp DIM3 -> Exp DIM3 -> Exp (V3 Double,Geom V3)
 cylindrical3D (rmin,rmax) (zmin,zmax) (tmin,tmax) dimensions index = lift (position,geom)  
                                         where 
                                             (rpos,zpos,tpos) = unlift $ unindex3 index :: (Exp Int,Exp Int,Exp Int) 
                                             (rsize,zsize,tsize) = unlift $ unindex3 dimensions :: (Exp Int,Exp Int,Exp Int) 
-                                            dr = constant $ rmax - rmin :: Exp Double 
-                                            dz = constant $ zmax - zmin :: Exp Double 
-                                            dt = constant $ tmax - tmin :: Exp Double 
-                                            rmin = dr * (fromIntegral rpos / fromIntegral rsize) :: Exp Double 
-                                            r = r + dr / 2.0 :: Exp Double 
-                                            rmax = r + dr :: Exp Double 
-                                            z = dz * (fromIntegral zpos / fromIntegral zsize) + dy/2.0 :: Exp Double
-                                            tmin = dt * (fromIntegral tpos / fromIntegral tsize) :: Exp Double 
-                                            t = tmin + dt/2.0 :: Exp Double 
-                                            tmax = tmin + dt :: Exp Double 
-                                            dAz' = dt/ 2.0 * (rmax^2.0 - rmin^2.0) :: Exp Double
+                                            dr = constant $ (rmax - rmin) :: Exp Double 
+                                            dz = constant $ (zmax - zmin) :: Exp Double 
+                                            dt = constant $ (tmax - tmin) :: Exp Double 
+                                            rs = dr * (fromIntegral rpos / fromIntegral rsize) + constant rmin :: Exp Double 
+                                            r = rs + dr / 2.0 :: Exp Double 
+                                            re = rs + dr :: Exp Double 
+                                            z = dz * (fromIntegral zpos / fromIntegral zsize) + dz/2.0 + constant zmin:: Exp Double
+                                            ts = dt * (fromIntegral tpos / fromIntegral tsize) + constant tmin:: Exp Double 
+                                            t = ts + dt/2.0 :: Exp Double 
+                                            te = ts + dt :: Exp Double 
+                                            dAz' = dr * r * dt :: Exp Double
                                             dV = dAz'*dz :: Exp Double
-                                            dAr' r = dz *dt * r :: Exp Double -> Exp Double 
-                                            dAt' = dr * dz :: Exp Double
-                                            dAru = lift $ V3 ((cos t) * (dAr' rmin)) ((sin t) * (dAr' rmin)) 0.0 :: Exp (V3 Double)
-                                            dArd = lift $ V3 ((cos t) * (dAr' rmax)) ((sin t) * (dAr' rmax)) 0.0 :: Exp (V3 Double)
-                                            dAtu = lift $ V3 (-1*(sin tmin)*dAt') ((cos tmin)*dAt') 0.0 :: Exp (V3 Double)
-                                            dAtd = lift $ V3 (-1*(sin tmax)*dAt') ((cos tmax)*dAt') 0.0 :: Exp (V3 Double)
+                                            dAr' rp = V3 ((cos t) * (dz*dt*rp)) ((sin t) * (dz*dt*rp)) 0.0 :: V3 (Exp Double)
+                                            dAru = lift $ dAr' rs  :: Exp (V3 Double)
+                                            dArd = lift $ dAr' re :: Exp (V3 Double)
+                                            dAt' tp = lift $ V3 (-1*(sin tp)*dr*dz) ((cos tp)*dr*dz) 0.0 :: Exp (V3 Double)
+                                            dAtu = dAt' ts :: Exp (V3 Double)
+                                            dAtd = dAt' te :: Exp (V3 Double)
                                             dAz = lift $ V3 0 0 (negate dAz') :: Exp (V3 Double) 
                                             patch = lift $ V3 (dAru,dArd) (dAz,dAz) (dAtu,dAtd) :: Exp (V3 (V3 Double, V3 Double))
                                             geom = lift $ (patch,dV) :: Exp (Geom V3) 
