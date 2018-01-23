@@ -36,8 +36,11 @@ type FluxFunc v state flux = Exp (v Double) -> Exp state -> Exp flux
 -- add two complex types together 
 type Merger a = Exp a -> Exp a -> Exp a 
 
--- Scale the variables in a given state
+-- Scale the variables in a given state (this should actually be between two seperate types)
 type Scaler state = Exp Double -> Exp state -> Exp state 
+
+--given a flux and a volume compute a derivative, volume could be negative
+type Flow flux diff = Exp Double -> Exp flux -> Exp diff 
 
 -- A Differ is responsible for taking the cell volume, as well as a vector of 
 -- flux pairs and reducing that to a time derivative. 
