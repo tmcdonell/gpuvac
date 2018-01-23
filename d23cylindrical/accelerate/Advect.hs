@@ -11,12 +11,6 @@ import Control.Applicative
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear
 
---class (Elt diff, Elt flux) => Accumulate flux diff | diff -> flux where 
---    accumulate :: Exp Double -> Exp flux -> Exp diff 
---
---class Elt diff => Merge diff  where 
---    merge :: Exp diff -> Exp diff -> Exp diff  
-
 type Projector a = Exp a -> Exp a -> Exp a -> Exp (a,a)
 
 proj :: Elt a => Projector a -> Stencil5 a -> Exp ((a,a),(a,a))
@@ -95,6 +89,7 @@ cellcomp fluxer differ geom states = derivative
                             fluxes :: Exp (v (flux,flux))
                             fluxes = createFlux fluxer patch states 
                             derivative = differ vol fluxes 
+
 
 
 
