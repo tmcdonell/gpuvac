@@ -27,6 +27,25 @@ average m s f dir states = lift (avg,avg) where
                                 avg = s 0.5 $ m left right 
 
 
+diff :: forall flux diff v. 
+    (P.Foldable v,P.Monad v, Elt flux,
+    Elt diff, Box v (flux,flux),Box v flux,
+    Box v diff)=>
+    Merger diff -> Flow flux diff -> Differ v flux diff 
+diff m f v fluxes = P.foldl1 m net where 
+        dims = unlift fluxes :: v (Exp (flux,flux))
+        net :: v (Exp diff) 
+        net = do 
+            d <- dims
+            let inflow = f (recip v) $ fst d 
+            let outflow = f (negate $ recip v) $ snd d
+            P.return $ m inflow outflow
+
+
+accum :: Merger state -> Scaler state -> Accumulator state state
+accum m s t d i =  m i ds where ds = s t d
+
+
 proj :: Elt a => Projector a -> Stencil5 a -> Exp ((a,a),(a,a))
 proj prj (pp,p,c,n,nn) = lift $ (us,ds) 
     where 
