@@ -7,7 +7,7 @@ import Data.Array.Accelerate.Linear
 import Types 
 
 
-cartesian3D :: (Double,Double) -> (Double,Double) -> (Double,Double) -> Exp DIM3 -> Exp DIM3 -> Exp (V3 Double,Geom V3)
+cartesian3D :: (Double,Double) -> (Double,Double) -> (Double,Double) -> Exp DIM3 -> Exp DIM3 -> Exp (V3 Double,Cell V3)
 cartesian3D (xmin,xmax) (ymin,ymax) (zmin,zmax) dimensions index = lift (position, geom)
                                     where
                                         (xpos,ypos,zpos) = unlift $ unindex3 index :: (Exp Int,Exp Int,Exp Int) 
@@ -20,14 +20,14 @@ cartesian3D (xmin,xmax) (ymin,ymax) (zmin,zmax) dimensions index = lift (positio
                                         dAy = lift $ V3 0 (dx*dz) 0 :: Exp (V3 Double) 
                                         dAz = lift $ V3 0 0 (dx*dy) :: Exp (V3 Double) 
                                         patch = lift $ V3 (dAx,dAx) (dAy,dAy) (dAz,dAz) :: Exp (V3 (V3 Double, V3 Double))
-                                        geom = lift $ (patch,dV) :: Exp (Geom V3) 
+                                        geom = lift $ (patch,dV) :: Exp (Cell V3) 
                                         x = dx * (fromIntegral xpos / fromIntegral xsize) + dx/2.0 + constant xmin :: Exp Double 
                                         y = dy * (fromIntegral ypos / fromIntegral ysize) + dy/2.0 + constant ymin :: Exp Double
                                         z = dz * (fromIntegral zpos / fromIntegral zsize) + dz/2.0 + constant zmin:: Exp Double 
                                         position = lift $ V3 x y z :: Exp (V3 Double) 
 
 
-cylindrical3D :: (Double,Double) -> (Double,Double) -> (Double,Double) -> Exp DIM3 -> Exp DIM3 -> Exp (V3 Double,Geom V3)
+cylindrical3D :: (Double,Double) -> (Double,Double) -> (Double,Double) -> Exp DIM3 -> Exp DIM3 -> Exp (V3 Double,Cell V3)
 cylindrical3D (rmin,rmax) (zmin,zmax) (tmin,tmax) dimensions index = lift (position,geom)  
                                         where 
                                             (rpos,zpos,tpos) = unlift $ unindex3 index :: (Exp Int,Exp Int,Exp Int) 
@@ -52,7 +52,7 @@ cylindrical3D (rmin,rmax) (zmin,zmax) (tmin,tmax) dimensions index = lift (posit
                                             dAtd = dAt' te :: Exp (V3 Double)
                                             dAz = lift $ V3 0 0 (negate dAz') :: Exp (V3 Double) 
                                             patch = lift $ V3 (dAru,dArd) (dAz,dAz) (dAtu,dAtd) :: Exp (V3 (V3 Double, V3 Double))
-                                            geom = lift $ (patch,dV) :: Exp (Geom V3) 
+                                            geom = lift $ (patch,dV) :: Exp (Cell V3) 
                                             position = lift $ V3 r z t :: Exp (V3 Double) 
 
 

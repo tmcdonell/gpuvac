@@ -37,7 +37,6 @@ stencil3D prj (ppx,px,c,nx,nnx) = lift $ V3 dn (d2^._x) (d2^._y)
                 d2 = unlift $ stencil2D prj c
                 dn = proj prj (ppx^._3^._3,px^._3^._3,c^._3^._3,nx^._3^._3,nnx^._3^._3)
 
-
 createFlux :: forall v state flux. 
                 (P.Monad v,Elt state, Elt flux,Elt (v Double),
                 Box v ((state,state),(state,state)),
@@ -70,7 +69,7 @@ cellcomp :: forall v state flux diff.
             Box v ((state,state),(state,state)),
             Box v (v Double, v Double),
             Elt (Patch v), 
-            Box v (flux,flux),Box v Double) => Fluxer v state flux -> Differ v flux diff -> Exp (Geom v) -> Exp (v ((state,state),(state,state))) -> Exp diff
+            Box v (flux,flux),Box v Double) => Fluxer v state flux -> Differ v flux diff -> Exp (Cell v) -> Exp (v ((state,state),(state,state))) -> Exp diff
 cellcomp fluxer differ geom states = derivative
                         where 
                             patch :: Exp (Patch v) 
