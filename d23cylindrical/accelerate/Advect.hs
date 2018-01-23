@@ -38,7 +38,6 @@ stencil3D prj (ppx,px,c,nx,nnx) = lift $ V3 dn (d2^._x) (d2^._y)
                 dn = proj prj (ppx^._3^._3,px^._3^._3,c^._3^._3,nx^._3^._3,nnx^._3^._3)
 
 
-
 createFlux :: forall v state flux. 
                 (P.Monad v,Elt state, Elt flux,Elt (v Double),
                 Box v ((state,state),(state,state)),
