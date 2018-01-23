@@ -49,7 +49,7 @@ csound2 gamma pressure density = gamma * pressure / density
 monoatomic_gamma :: Exp Double 
 monoatomic_gamma = constant (5/3)
 
-cmax :: Exp (V3 Double) ->Exp Density -> Exp Momentum -> Exp Energy  -> Exp Magnetic -> Exp Speed
+cmax :: Exp (V3 Double) -> Exp Density -> Exp Momentum -> Exp Energy  -> Exp Magnetic -> Exp Speed
 cmax dir den mom ener mag = currvel + sound 
                         where
                             gamma = monoatomic_gamma
