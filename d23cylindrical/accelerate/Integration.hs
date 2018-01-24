@@ -9,7 +9,10 @@ import Data.Array.Accelerate as Acc
 
 import Types 
 
-twostep :: (Shape sh, Elt diff, Elt state) =>  (Acc (Array sh state) -> Acc (Array sh diff)) -> (Acc (Array sh state) -> Acc (Array sh diff)) -> Accumulator diff state -> (Acc (Array sh state) -> Acc (Array sh state)) -> Exp Double -> Acc (Array sh state) -> Acc (Array sh state) 
+accum :: Merger state -> Scaler state -> Accumulator state state
+accum m s t d i =  m i ds where ds = s t d
+
+twostep :: (Shape sh, Elt diff, Elt state) =>  (Acc (Array sh state) -> Acc (Array sh diff)) -> (Acc (Array sh state) -> Acc (Array sh diff)) -> Accumulator diff state -> (Acc (Array sh state) -> Acc (Array sh state)) -> Simulator sh state
 twostep predict advance integrate boundry time start = final 
             where
                 step t d u = boundry $ Acc.zipWith (\di st -> integrate t di st) d u 

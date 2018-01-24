@@ -42,10 +42,6 @@ diff m f v fluxes = P.foldl1 m net where
             P.return $ m inflow outflow
 
 
-accum :: Merger state -> Scaler state -> Accumulator state state
-accum m s t d i =  m i ds where ds = s t d
-
-
 proj :: Elt a => Projector a -> Stencil5 a -> Exp ((a,a),(a,a))
 proj prj (pp,p,c,n,nn) = lift $ (us,ds) 
     where 
