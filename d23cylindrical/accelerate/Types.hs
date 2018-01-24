@@ -53,3 +53,9 @@ type Differ vec flux diff = Exp Double -> Exp (vec (flux,flux)) -> Exp diff
 type Accumulator diff state = Exp Double -> Exp diff -> Exp state -> Exp state
 
 
+--The type of an overall simulator
+type Simulator sh state = Exp Double -> Acc (Array sh state) -> Acc (Array sh state)
+
+type Geometry3D = Acc (Array DIM3 (V3 Double , Cell V3))
+
+
