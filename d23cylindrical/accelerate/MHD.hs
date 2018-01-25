@@ -13,14 +13,14 @@ import Data.Array.Accelerate.Linear
 import Control.Lens 
 import Limits
 
-type Pressure = Real 
-type Magnetic = V3 Real
-type Momentum = V3 Real
-type Density = Real
-type Energy = Real
-type Force = V3 Real
-type Velocity = V3 Real
-type Speed = Real 
+type Pressure = Precision 
+type Magnetic = V3 Precision
+type Momentum = V3 Precision
+type Density = Precision
+type Energy = Precision
+type Force = V3 Precision
+type Velocity = V3 Precision
+type Speed = Precision 
 
 magneticenergy :: Exp Magnetic -> Exp Energy
 magneticenergy mag = (quadrance mag) / 2
@@ -34,22 +34,22 @@ velocity mom den = mom ^/ den
 momentum :: Exp Velocity -> Exp Density -> Exp Momentum
 momentum v d = v^*d
 
-pressure :: Exp Double -> Exp Energy -> Exp Energy -> Exp Energy -> Exp Pressure
+pressure :: Exp Precision -> Exp Energy -> Exp Energy -> Exp Energy -> Exp Pressure
 pressure gamma total kinetic magnetic = (gamma - 1)*(total - kinetic - magnetic)
 
-thermalenergy :: Exp Double -> Exp Pressure -> Exp Energy
+thermalenergy :: Exp Precision -> Exp Pressure -> Exp Energy
 thermalenergy gamma pressure = pressure / (gamma - 1)
 
 totalPressure :: Exp Pressure -> Exp Energy -> Exp Pressure 
 totalPressure p em = p + em 
 
-csound2 ::  Exp Double -> Exp Pressure -> Exp Density -> Exp Speed 
+csound2 ::  Exp Precision -> Exp Pressure -> Exp Density -> Exp Speed 
 csound2 gamma pressure density = gamma * pressure / density
 
-monoatomic_gamma :: Exp Double 
+monoatomic_gamma :: Exp Precision 
 monoatomic_gamma = constant (5/3)
 
-cmax :: Exp (V3 Double) -> Exp Density -> Exp Momentum -> Exp Energy  -> Exp Magnetic -> Exp Speed
+cmax :: Exp (V3 Precision) -> Exp Density -> Exp Momentum -> Exp Energy  -> Exp Magnetic -> Exp Speed
 cmax dir den mom ener mag = currvel + sound 
                         where
                             gamma = monoatomic_gamma
@@ -66,11 +66,11 @@ type MHD = (Density, Momentum, Energy, Magnetic)
 mhdzero :: MHD 
 mhdzero = (0.0, V3 0.0 0.0 0.0,  0.0, V3 0.0 0.0 0.0)
 
-mhdspeed :: Exp (V3 Real) -> Exp MHD -> Exp Speed 
+mhdspeed :: Exp (V3 Precision) -> Exp MHD -> Exp Speed 
 mhdspeed dir mhd = cmax dir den mom ener mag where 
         (den,mom,ener,mag) = unlift mhd 
 
-mhdscale :: Exp Real -> Exp MHD -> Exp MHD 
+mhdscale :: Exp Precision -> Exp MHD -> Exp MHD 
 mhdscale amt mhd = lift (amt*den,amt*^mom,amt*ener,amt*^mag)
                         where (den,mom,ener,mag) = unlift mhd
 
@@ -83,7 +83,7 @@ mhdmerge a b = lift (aden+bden, amom ^+^ bmom, aener+bener, amag^+^bmag)
                             (bden,bmom, bener,bmag) = unlift b
 
 
-mhdflux :: Exp (V3 Real) -> Exp MHD -> Exp MHD
+mhdflux :: Exp (V3 Precision) -> Exp MHD -> Exp MHD
 mhdflux dir mhd = lift (fden,fmom,fener,fmag)
                             where
                                 (den,mom,ener,mag) = unlift mhd
@@ -101,7 +101,7 @@ mhdflux dir mhd = lift (fden,fmom,fener,fmag)
 
 
 --perform forwards and backwards projection with conservative variables
-conservativeMHDProject :: (Exp Real -> Exp Real -> Exp Real-> Exp Real) -> Exp MHD -> Exp MHD -> Exp MHD -> Exp (MHD,MHD)
+conservativeMHDProject :: (Exp Precision -> Exp Precision -> Exp Precision-> Exp Precision) -> Exp MHD -> Exp MHD -> Exp MHD -> Exp (MHD,MHD)
 conservativeMHDProject limiter p c n = lift (u,d)
                         where
                             (pden,pmom,pener,pmag) = unlift p
@@ -116,7 +116,7 @@ conservativeMHDProject limiter p c n = lift (u,d)
 
 
 --perform forwards and backwards projections with primative (pressure velocity) variables
-primativeMHDProject :: (Exp Real -> Exp Real -> Exp Real-> Exp Real) -> Exp MHD -> Exp MHD -> Exp MHD -> Exp (MHD,MHD)
+primativeMHDProject :: (Exp Precision -> Exp Precision -> Exp Precision-> Exp Precision) -> Exp MHD -> Exp MHD -> Exp MHD -> Exp (MHD,MHD)
 primativeMHDProject limiter p c n = lift (u,d)
                         where
                             gamma = monoatomic_gamma
