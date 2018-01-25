@@ -67,13 +67,13 @@ stencil3D prj (ppx,px,c,nx,nnx) = lift $ V3 dn (d2^._x) (d2^._y)
                 dn = proj prj (ppx^._3^._3,px^._3^._3,c^._3^._3,nx^._3^._3,nnx^._3^._3)
 
 createFlux :: forall v state flux. 
-                (P.Monad v,Elt state, Elt flux,Elt (v Double),
+                (P.Monad v,Elt state, Elt flux,Elt (v Real),
                 Box v ((state,state),(state,state)),
-                Box v (v Double, v Double),
-                Box v (flux,flux),Box v Double) =>
+                Box v (v Real, v Real),
+                Box v (flux,flux),Box v Real) =>
                 Fluxer v state flux -> Exp (Patch v) -> Exp (v ((state,state),(state,state))) -> Exp (v (flux,flux))
 createFlux fluxer cellgeom projected_state = lift fluxes where
-                    norms :: v (Exp (v Double, v Double))
+                    norms :: v (Exp (v Real, v Real))
                     norms = unlift cellgeom
                     states :: v (Exp ((state,state),(state,state)))
                     states = unlift projected_state
@@ -93,16 +93,16 @@ createFlux fluxer cellgeom projected_state = lift fluxes where
 
 
 cellcomp :: forall v state flux diff. 
-            (P.Monad v,Elt state, Elt flux,Elt diff,Elt (v Double),
+            (P.Monad v,Elt state, Elt flux,Elt diff,Elt (v Real),
             Box v ((state,state),(state,state)),
-            Box v (v Double, v Double),
+            Box v (v Real, v Real),
             Elt (Patch v), 
-            Box v (flux,flux),Box v Double) => Fluxer v state flux -> Differ v flux diff -> Exp (Cell v) -> Exp (v ((state,state),(state,state))) -> Exp diff
+            Box v (flux,flux),Box v Real) => Fluxer v state flux -> Differ v flux diff -> Exp (Cell v) -> Exp (v ((state,state),(state,state))) -> Exp diff
 cellcomp fluxer differ geom states = derivative
                         where 
                             patch :: Exp (Patch v) 
                             patch = fst geom 
-                            vol :: Exp Double
+                            vol :: Exp Real
                             vol = snd geom
                             fluxes :: Exp (v (flux,flux))
                             fluxes = createFlux fluxer patch states 

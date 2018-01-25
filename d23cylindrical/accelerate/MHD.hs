@@ -7,19 +7,20 @@ module MHD where
 
 import qualified Prelude as P
 
+import Types
 import Data.Array.Accelerate as Acc 
 import Data.Array.Accelerate.Linear
 import Control.Lens 
 import Limits
 
-type Pressure = Double 
-type Magnetic = V3 Double
-type Momentum = V3 Double
-type Density = Double
-type Energy = Double
-type Force = V3 Double
-type Velocity = V3 Double
-type Speed = Double 
+type Pressure = Real 
+type Magnetic = V3 Real
+type Momentum = V3 Real
+type Density = Real
+type Energy = Real
+type Force = V3 Real
+type Velocity = V3 Real
+type Speed = Real 
 
 magneticenergy :: Exp Magnetic -> Exp Energy
 magneticenergy mag = (quadrance mag) / 2
@@ -65,11 +66,11 @@ type MHD = (Density, Momentum, Energy, Magnetic)
 mhdzero :: MHD 
 mhdzero = (0.0, V3 0.0 0.0 0.0,  0.0, V3 0.0 0.0 0.0)
 
-mhdspeed :: Exp (V3 Double) -> Exp MHD -> Exp Speed 
+mhdspeed :: Exp (V3 Real) -> Exp MHD -> Exp Speed 
 mhdspeed dir mhd = cmax dir den mom ener mag where 
         (den,mom,ener,mag) = unlift mhd 
 
-mhdscale :: Exp Double -> Exp MHD -> Exp MHD 
+mhdscale :: Exp Real -> Exp MHD -> Exp MHD 
 mhdscale amt mhd = lift (amt*den,amt*^mom,amt*ener,amt*^mag)
                         where (den,mom,ener,mag) = unlift mhd
 
@@ -82,7 +83,7 @@ mhdmerge a b = lift (aden+bden, amom ^+^ bmom, aener+bener, amag^+^bmag)
                             (bden,bmom, bener,bmag) = unlift b
 
 
-mhdflux :: Exp (V3 Double) -> Exp MHD -> Exp MHD
+mhdflux :: Exp (V3 Real) -> Exp MHD -> Exp MHD
 mhdflux dir mhd = lift (fden,fmom,fener,fmag)
                             where
                                 (den,mom,ener,mag) = unlift mhd
@@ -100,7 +101,7 @@ mhdflux dir mhd = lift (fden,fmom,fener,fmag)
 
 
 --perform forwards and backwards projection with conservative variables
-conservativeMHDProject :: (Exp Double -> Exp Double -> Exp Double-> Exp Double) -> Exp MHD -> Exp MHD -> Exp MHD -> Exp (MHD,MHD)
+conservativeMHDProject :: (Exp Real -> Exp Real -> Exp Real-> Exp Real) -> Exp MHD -> Exp MHD -> Exp MHD -> Exp (MHD,MHD)
 conservativeMHDProject limiter p c n = lift (u,d)
                         where
                             (pden,pmom,pener,pmag) = unlift p
@@ -115,7 +116,7 @@ conservativeMHDProject limiter p c n = lift (u,d)
 
 
 --perform forwards and backwards projections with primative (pressure velocity) variables
-primativeMHDProject :: (Exp Double -> Exp Double -> Exp Double-> Exp Double) -> Exp MHD -> Exp MHD -> Exp MHD -> Exp (MHD,MHD)
+primativeMHDProject :: (Exp Real -> Exp Real -> Exp Real-> Exp Real) -> Exp MHD -> Exp MHD -> Exp MHD -> Exp (MHD,MHD)
 primativeMHDProject limiter p c n = lift (u,d)
                         where
                             gamma = monoatomic_gamma
