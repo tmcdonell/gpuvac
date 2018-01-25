@@ -13,4 +13,4 @@ step = PTX.run1 testsimulator
 
 values = L.foldl' (\p _ -> step p) startcond [1..1000]
 
-main = putStrLn $ show values
+main = putStrLn . show $ indexArray values (Z:.0:.0:.0)
