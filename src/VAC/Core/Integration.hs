@@ -7,7 +7,7 @@ module Integration where
 import qualified Prelude as P 
 import Data.Array.Accelerate as Acc
 
-import Types 
+import VAC.Core.Types as Types
 
 accum :: Merger state -> Scaler state -> Accumulator state state
 accum m s t d i =  m i ds where ds = s t d

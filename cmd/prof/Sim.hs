@@ -2,12 +2,12 @@ module Sim where
 
 import qualified Prelude as P 
 
-import Types 
-import Advect
-import Limits
-import MHD
-import Integration
-import Geometry 
+import VAC.Core.Types as Types
+import VAC.Core.Advect as Advect
+import VAC.Core.Limits as Limits
+import VAC.Physics.MHD as MHD
+import VAC.Core.Integration as Integration
+import VAC.Core.Geometry as Geometry
 
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear

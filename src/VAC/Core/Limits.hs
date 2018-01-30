@@ -9,7 +9,7 @@ import qualified Prelude as P
 import Data.Array.Accelerate as Acc 
 import Data.Array.Accelerate.Linear
 
-import Types
+import VAC.Core.Types as Types
 
 --slope limited derivative
 dwlimiter2 :: Limiter

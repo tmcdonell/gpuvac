@@ -1,6 +1,6 @@
 {-# LANGUAGE TemplateHaskell #-}
 import Sim
-import MHD
+import VAC.Physics.MHD as MHD
 
 import Data.List as L
 import Data.Array.Accelerate as Acc

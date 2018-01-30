@@ -4,7 +4,7 @@ import qualified Prelude as P
 
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear
-import Types 
+import VAC.Core.Types as Types
 
 
 cartesian3D :: (Precision,Precision) -> (Precision,Precision) -> (Precision,Precision) -> Exp DIM3 -> Exp DIM3 -> Exp (V3 Precision,Cell V3)

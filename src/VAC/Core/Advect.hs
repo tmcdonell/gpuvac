@@ -10,7 +10,7 @@ import Control.Lens
 import Control.Applicative
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear
-import Types 
+import VAC.Core.Types as Types
 
 -- the TVD method looks at the flux and state on either side of an interface
 -- and then determines the downstream flux

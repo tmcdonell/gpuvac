@@ -7,11 +7,11 @@ module MHD where
 
 import qualified Prelude as P
 
-import Types
+import VAC.Core.Types as Types
 import Data.Array.Accelerate as Acc 
 import Data.Array.Accelerate.Linear
 import Control.Lens 
-import Limits
+import VAC.Core.Limits as Limits
 
 type Pressure = Precision 
 type Magnetic = V3 Precision
