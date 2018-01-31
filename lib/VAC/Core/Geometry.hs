@@ -1,4 +1,4 @@
-module Geometry where 
+module VAC.Core.Geometry where 
 
 import qualified Prelude as P 
 

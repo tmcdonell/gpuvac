@@ -1,4 +1,4 @@
-module Types where 
+module VAC.Core.Types where 
 
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear

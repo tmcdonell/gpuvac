@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Advect where 
+module VAC.Core.Advect where 
 
 import qualified Prelude as P 
 

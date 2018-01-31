@@ -2,7 +2,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FunctionalDependencies #-}
-module Integration where
+module VAC.Core.Integration where
 
 import qualified Prelude as P 
 import Data.Array.Accelerate as Acc

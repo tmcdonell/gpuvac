@@ -2,7 +2,7 @@
 {-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-module Limits where
+module VAC.Core.Limits where
 
 import Control.Applicative
 import qualified Prelude as P
