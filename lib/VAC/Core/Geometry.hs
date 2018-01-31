@@ -57,4 +57,4 @@ cylindrical3D (rmin,rmax) (zmin,zmax) (tmin,tmax) dimensions index = lift (posit
 
 
 generateGeometry :: (Elt a, Shape sh) => (Exp sh -> Exp sh -> Exp a) -> Exp sh -> Acc (Array sh a) 
-generateGeometry gener size = generate size (gener size) 
+generateGeometry gener size = generate size $ gener size
