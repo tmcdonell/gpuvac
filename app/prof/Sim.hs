@@ -37,7 +37,7 @@ constructSimulator :: (Acc (Array DIM3 MHD) -> Acc (Array DIM3 MHD)) -> Acc (Arr
 constructSimulator constructboundary cells = twostep (predictor $ cells) (simulator $ cells) accumulator constructboundary 
 
 geometry :: Acc (Array DIM3 (V3 Precision,Cell V3))
-geometry = generateGeometry (cylindrical3D (0.1,1) (0,1) (0,2*pi)) (constant (Z:.50:.350:.50))
+geometry = generateGeometry (cylindrical3D (0.1,1) (0,1) (0,2*pi)) (constant (Z:.45:.45:.45))
 
 (locations,cells) = unzip geometry :: (Acc (Array DIM3 (V3 Precision)),  Acc (Array DIM3 (Cell V3)))
 
