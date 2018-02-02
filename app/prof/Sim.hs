@@ -34,10 +34,10 @@ accumulator :: Accumulator MHD MHD
 accumulator = accum mhdmerge mhdscale
 
 constructSimulator :: (Acc (Array DIM3 MHD) -> Acc (Array DIM3 MHD)) -> Acc (Array DIM3 (Cell V3))-> Simulator DIM3 MHD 
-constructSimulator constructboundary cells = twostep (predictor $ cells) (simulator $ cells) accumulator constructboundary 
+constructSimulator constructboundary cell = twostep (predictor $ cell) (simulator $ cell) accumulator constructboundary 
 
 geometry :: Acc (Array DIM3 (V3 Precision,Cell V3))
-geometry = generateGeometry (cylindrical3D (0.1,1) (0,1) (0,2*pi)) (constant (Z:.45:.45:.45))
+geometry = generateGeometry (cylindrical3D (0.1,1) (0,1)) (constant (Z:.45:.45:.45))
 
 (locations,cells) = unzip geometry :: (Acc (Array DIM3 (V3 Precision)),  Acc (Array DIM3 (Cell V3)))
 
