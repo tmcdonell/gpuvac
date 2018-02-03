@@ -9,8 +9,8 @@ import Linear.Matrix (fromQuaternion)
 import VAC.Core.Types as Types
 
 delta :: (Precision, Precision) -> Exp Int -> Exp Precision
-delta (rmin,rmax) n = delta / fromIntegral n where 
-                    delta = constant $ rmax - rmin 
+delta (rmin,rmax) n = (constant $ rmax - rmin) / fromIntegral n 
+                      
 
 position :: (Precision,Precision) -> Exp Int -> Exp Int -> Exp Precision 
 position (rmin,rmax) n i = dx*(fromIntegral i) / (fromIntegral n) + dx/2.0 + constant rmin
@@ -77,15 +77,16 @@ sweepCell amount input = rotateCell (rotateAboutZ amount) input
 
 cylindrical3D :: (Precision,Precision) -> (Precision,Precision) -> Exp DIM3 -> Exp DIM3 -> Exp (V3 Precision,Cell V3)
 cylindrical3D rrange zrange dimensions index = lift (pos,newvox)  
-                                        where 
+                                        where
+                                            trange = (-pi,pi)
                                             (rpos,zpos,tpos) = unlift $ unindex3 index :: (Exp Int,Exp Int,Exp Int) 
                                             (rsize,zsize,tsize) = unlift $ unindex3 dimensions :: (Exp Int,Exp Int,Exp Int) 
                                             dr = delta rrange rsize :: Exp Precision 
                                             dz = delta zrange zsize :: Exp Precision 
-                                            dt = delta (0.0,2*pi) tsize :: Exp Precision 
+                                            dt = delta trange tsize :: Exp Precision 
                                             r = position rrange rsize rpos :: Exp Precision
                                             z = position zrange zsize zpos :: Exp Precision 
-                                            t = position (0.0,2*pi) tsize tpos - dt / 2.0 :: Exp Precision -- we want 0 aligned with first cell
+                                            t = position trange tsize tpos - dt / 2.0 :: Exp Precision -- we want 0 aligned with first cell
                                             vox = cylindricalVoxel dr dz dt r :: Exp (Cell V3) 
                                             newvox = sweepCell t vox :: Exp (Cell V3) 
                                             pos = lift $ V3 r z t :: Exp (V3 Precision)
