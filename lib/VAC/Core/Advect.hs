@@ -16,11 +16,11 @@ import VAC.Core.Types as Types
 -- and then determines the downstream flux
 -- for hancock we just use the upstream and downstream flux as the upstream and 
 -- downstream flux respectively
-hancock :: (Elt flux, Elt state) => FluxFunc v state flux -> Fluxer v state flux 
+hancock :: (Elt flux, Elt state) => FluxFunc state flux -> Fluxer state flux 
 hancock f dir states = lift $ (f dir $ fst states, f dir $ snd states)
 
 
-average :: (Elt flux, Elt state) =>  Merger flux -> Scaler flux -> FluxFunc v state flux -> Fluxer v state flux
+average :: (Elt flux, Elt state) =>  Merger flux -> Scaler flux -> FluxFunc state flux -> Fluxer state flux
 average m s f dir states = lift (avg,avg) where
                                 left = f dir $ fst states 
                                 right = f dir $ snd states
@@ -42,8 +42,8 @@ diff m f v fluxes = P.foldl1 m net where
             P.return $ m inflow outflow
 
 
-proj :: Elt a => Projector a -> Stencil5 a -> Exp ((a,a),(a,a))
-proj prj (pp,p,c,n,nn) = lift $ (us,ds) 
+onAxis :: Elt a => Projector a -> Stencil5 a -> Exp ((a,a),(a,a))
+onAxis prj (pp,p,c,n,nn) = lift $ (us,ds) 
     where 
     pd =  snd $ prj pp p c
     cen =   prj p c n 
@@ -51,71 +51,43 @@ proj prj (pp,p,c,n,nn) = lift $ (us,ds)
     us = (pd,fst cen)
     ds = (snd cen,nu)
 
-stencil1D :: Elt state => Projector state -> Stencil5 state -> Exp (V1 ((state,state),(state,state)))
-stencil1D prj vals = lift . V1 $ proj prj vals
+stencilX :: Elt a => Projector a -> Stencil3x3x5 a -> Exp ((a,a),(a,a))
+stencilX prj ( (_,(_,pp,_),_)
+              ,(_,(_,p,_),_)
+              ,(_,(_,c,_),_)
+              ,(_,(_,n,_),_)
+              ,(_,(_,nn,_),_) ) = onAxis prj (pp,p,c,n,nn)
 
-stencil2D :: Elt state => Projector state ->Stencil5x5 state -> Exp (V2 ((state,state),(state,state)))
-stencil2D prj (ppx,px,c,nx,nnx) = lift $ V2 dn (d1^._x) 
-            where 
-                d1 = unlift $ stencil1D prj c 
-                dn = proj prj (ppx^._3,px^._3,c^._3,nx^._3,nnx^._3) 
+stencilY :: Elt a => Projector a -> Stencil3x5x3 a -> Exp ((a,a),(a,a))
+stencilY prj (_,((_,pp,_),(_,p,_),(_,c,_),(_,n,_),(_,nn,_)),_) = onAxis prj (pp,p,c,n,nn) 
 
-stencil3D :: Elt state => Projector state -> Stencil5x5x5 state -> Exp (V3 ((state,state),(state,state)))
-stencil3D prj (ppx,px,c,nx,nnx) = lift $ V3 dn (d2^._x) (d2^._y) 
-            where
-                d2 = unlift $ stencil2D prj c
-                dn = proj prj (ppx^._3^._3,px^._3^._3,c^._3^._3,nx^._3^._3,nnx^._3^._3)
+stencilZ :: Elt a => Projector a -> Stencil5x3x3 a -> Exp ((a,a),(a,a))
+stencilZ prj (_,(_,(pp,p,c,n,nn),_),_) = onAxis prj (pp,p,c,n,nn)
 
-createFlux :: forall v state flux. 
-                (P.Monad v,Elt state, Elt flux,Elt (v Precision),
-                Box v ((state,state),(state,state)),
-                Box v (v Precision, v Precision),
-                Box v (flux,flux),Box v Precision) =>
-                Fluxer v state flux -> Exp (Patch v) -> Exp (v ((state,state),(state,state))) -> Exp (v (flux,flux))
-createFlux fluxer cellgeom projected_state = lift fluxes where
-                    norms :: v (Exp (v Precision, v Precision))
-                    norms = unlift cellgeom
-                    states :: v (Exp ((state,state),(state,state)))
-                    states = unlift projected_state
-                    fluxes :: v (Exp (flux,flux))
-                    fluxes = do 
-                        n <- norms 
-                        s <- states
-                        let leftn = fst n
-                        let rightn = snd n
-                        let lefts = fst s
-                        let rights = snd s
-                        let leftf = fluxer leftn lefts
-                        let rightf = fluxer rightn rights
-                        let uf = snd leftf
-                        let df = fst rightf
-                        P.return $ lift (uf,df)
+createFlux :: forall state flux.(Elt state,Elt flux) => Fluxer state flux -> Exp (V3 Precision,V3 Precision) -> Exp ((state,state),(state,state))  -> Exp (flux,flux)
+createFlux fluxer geom projected_state = lift fluxes where 
+        (ustates,dstates) = unlift projected_state :: (Exp (state,state),Exp (state,state))
+        (unorm,dnorm) = unlift geom :: (Exp (V3 Precision),Exp (V3 Precision))
+        uflux = snd $ fluxer unorm ustates :: Exp flux
+        dflux = fst $ fluxer dnorm dstates :: Exp flux
+        fluxes = (uflux,dflux)
 
+advect:: forall state stencil flux sh. (Stencil sh state stencil,Elt state,Elt flux) => (stencil -> Exp ((state,state),(state,state))) -> Fluxer state flux -> Acc (Array sh PatchPair) -> Acc (Array sh state) -> Acc (Array sh (flux,flux))
+advect sten fluxer geom input = fluxes where 
+        states = stencil sten wrap input :: Acc (Array sh ((state,state),(state,state)))
+        fluxes = Acc.zipWith (createFlux fluxer) geom states :: Acc (Array sh (flux,flux))
 
-cellcomp :: forall v state flux diff. 
-            (P.Monad v,Elt state, Elt flux,Elt diff,Elt (v Precision),
-            Box v ((state,state),(state,state)),
-            Box v (v Precision, v Precision),
-            Elt (Patch v), 
-            Box v (flux,flux),Box v Precision) => Fluxer v state flux -> Differ v flux diff -> Exp (Cell v) -> Exp (v ((state,state),(state,state))) -> Exp diff
-cellcomp fluxer differ geom states = derivative
-                        where 
-                            patch :: Exp (Patch v) 
-                            patch = fst geom 
-                            vol :: Exp Precision
-                            vol = snd geom
-                            fluxes :: Exp (v (flux,flux))
-                            fluxes = createFlux fluxer patch states 
-                            derivative = differ vol fluxes 
-
-
-advection3D :: forall  state flux diff. 
-    (Elt state, Elt flux,Elt diff)=> Projector state -> Fluxer V3 state flux -> Differ V3 flux diff -> Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 state) -> Acc (Array DIM3 diff)
-advection3D proj flux diff geom input = derivative 
-                            where 
-                                projected_states = stencil (stencil3D proj) wrap input :: Acc (Array DIM3 (V3 ((state,state),(state,state))))
-                                cellcomputer g s = cellcomp flux diff g s :: Exp diff
-                                derivative = Acc.zipWith cellcomputer geom projected_states :: Acc (Array DIM3 diff) 
+advection3D :: forall state flux diff. 
+    (Elt state, Elt flux,Elt diff)=> Projector state -> Fluxer state flux -> Differ V3 flux diff -> Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 state) -> Acc (Array DIM3 diff)
+advection3D proj fluxer diff geom input = derivative 
+                            where
+                                (faces,volume) = unzip geom :: (Acc (Array DIM3 (Faces V3)),Acc (Array DIM3 Precision))
+                                xfluxes = advect (stencilX proj) fluxer (map (\v -> v^._x) faces) input :: Acc (Array DIM3 (flux,flux))
+                                yfluxes = advect (stencilY proj) fluxer (map (\v -> v^._y) faces) input :: Acc (Array DIM3 (flux,flux))
+                                zfluxes = advect (stencilZ proj) fluxer (map (\v -> v^._z) faces) input :: Acc (Array DIM3 (flux,flux))
+                                tobox a b c= lift $ V3 a b c :: Exp (V3 (flux,flux))
+                                fluxes = Acc.zipWith3 tobox xfluxes yfluxes zfluxes :: Acc (Array DIM3 (V3 (flux,flux)))
+                                derivative = Acc.zipWith diff volume fluxes :: Acc (Array DIM3 diff)
 
 
 

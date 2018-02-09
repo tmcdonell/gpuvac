@@ -18,13 +18,13 @@ projector = primativeMHDProject dwlimiter2
 differ :: Differ V3 MHD MHD
 differ = diff mhdmerge mhdscale
 
-predictorFlux :: Fluxer V3 MHD MHD 
+predictorFlux :: Fluxer MHD MHD 
 predictorFlux = hancock mhdflux
 
 predictor:: Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 MHD) -> Acc (Array DIM3 MHD)
 predictor = advection3D projector predictorFlux differ 
 
-simulatorFlux :: Fluxer V3 MHD MHD 
+simulatorFlux :: Fluxer MHD MHD 
 simulatorFlux = average mhdmerge mhdscale mhdflux
 
 simulator:: Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 MHD) -> Acc (Array DIM3 MHD)
@@ -37,12 +37,12 @@ constructSimulator :: (Acc (Array DIM3 MHD) -> Acc (Array DIM3 MHD)) -> Acc (Arr
 constructSimulator constructboundary cell = twostep (predictor $ cell) (simulator $ cell) accumulator constructboundary 
 
 geometry :: Acc (Array DIM3 (V3 Precision,Cell V3))
-geometry = generateGeometry (cylindrical3D (0.1,1) (0,1)) (constant (Z:.45:.45:.45))
+geometry = generateGeometry (cylindrical3D (0.1,1) (0,1)) (constant (Z:.50:.350:.100))
 
-(locations,cells) = unzip geometry :: (Acc (Array DIM3 (V3 Precision)),  Acc (Array DIM3 (Cell V3)))
+(locations,voxels) = unzip geometry :: (Acc (Array DIM3 (V3 Precision)),  Acc (Array DIM3 (Cell V3)))
 
-testsimulator ::  Acc (Array DIM3 MHD) -> Acc (Array DIM3 MHD)
-testsimulator input = constructSimulator P.id cells (constant 0) input
+testsimulator ::  Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 MHD) -> Acc (Array DIM3 MHD)
+testsimulator cells input = constructSimulator P.id cells (constant 1e-9) input
 
 initial :: Acc (Array DIM3 MHD) 
 initial = Acc.map (\_ -> constant mhdzero) locations

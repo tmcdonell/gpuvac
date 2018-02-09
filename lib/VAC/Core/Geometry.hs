@@ -20,7 +20,7 @@ position (rmin,rmax) n i = dx*(fromIntegral i) / (fromIntegral n) + dx/2.0 + con
 cartesianVoxel :: Exp Precision -> Exp Precision -> Exp Precision -> Exp (Cell V3) 
 cartesianVoxel dx dy dz = lift $ (patch,dV)
                             where
-                                patch = lift $ V3 (dAx,dAx) (dAy,dAy) (dAz,dAz) :: Exp (Patch V3)
+                                patch = lift $ V3 (dAx,dAx) (dAy,dAy) (dAz,dAz) :: Exp (Faces V3)
                                 dAx = lift $ V3 (dy*dz) 0 0 :: Exp (V3 Precision)
                                 dAy = lift $ V3 0 (dx*dz) 0 :: Exp (V3 Precision)
                                 dAz = lift $ V3 0 0 (dx*dy) :: Exp (V3 Precision)
@@ -65,12 +65,12 @@ rotatePatchPair rot patches = lift (rot !* p1, rot !* p2) where (p1,p2) = unlift
 
 rotateCell :: Quaternion (Exp Precision) -> Exp (Cell V3) -> Exp (Cell V3) 
 rotateCell rotquat cell = lift $ (newpatch,volume)  where 
-        (patches, volume) = unlift cell :: (Exp (Patch V3), Exp Precision)
+        (patches, volume) = unlift cell :: (Exp (Faces V3), Exp Precision)
         rotmat = lift $ fromQuaternion rotquat :: Exp (M33 Precision)
-        patchpairs = unlift patches :: V3 (Exp (V3 Precision,V3 Precision))
-        mvfunc pair = rotatePatchPair rotmat pair :: Exp (V3 Precision, V3 Precision) 
-        newpairs = P.fmap mvfunc patchpairs :: V3 (Exp (V3 Precision,V3 Precision))
-        newpatch = lift newpairs :: Exp (Patch V3) 
+        patchpairs = unlift patches :: V3 (Exp PatchPair)
+        mvfunc pair = rotatePatchPair rotmat pair :: Exp PatchPair 
+        newpairs = P.fmap mvfunc patchpairs :: V3 (Exp PatchPair)
+        newpatch = lift newpairs :: Exp (Faces V3) 
 
 sweepCell ::Exp Precision -> Exp (Cell V3) -> Exp (Cell V3)
 sweepCell amount input = rotateCell (rotateAboutZ amount) input
