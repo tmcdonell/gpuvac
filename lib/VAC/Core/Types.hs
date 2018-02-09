@@ -37,13 +37,13 @@ type Fluxer state flux = Exp (V3 Precision) -> Exp (state,state) -> Exp (flux,fl
 -- onesided surface flux
 type FluxFunc state flux = Exp (V3 Precision) -> Exp state -> Exp flux
 
--- add two complex types together 
+-- add two complex types together usually in a sum type fashion 
 type Merger a = Exp a -> Exp a -> Exp a 
 
 -- Scale the variables in a given state (this should actually be between two seperate types)
 type Scaler state = Exp Precision -> Exp state -> Exp state 
 
---given a flux and a volume compute a derivative, volume could be negative
+--given a flux and a volume compute a derivative, volume could be negative indicating flux is leaving
 type Flow flux diff = Exp Precision -> Exp flux -> Exp diff 
 
 -- A Differ is responsible for taking the cell volume, as well as a vector of 
