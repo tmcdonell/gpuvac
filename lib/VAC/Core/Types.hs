@@ -30,7 +30,7 @@ type Projector a = Exp a -> Exp a -> Exp a -> Exp (a,a)
 -- The result of this computation is the upstream and downstream fluxes at the boundry 
 -- which should be the same for a conservative method. The advection method, such as 
 -- hancock or kt would be encoded within this function
-type Fluxer state flux = Exp (V3 Precision) -> Exp (state,state) -> Exp (flux,flux) 
+type Fluxer state flux = Exp (V3 Precision) -> Exp state -> Exp state -> Exp (flux,flux) 
 
 -- A FluxFunc is exactly what you would expect for an advective problem
 -- it takes a surface patch normal and a state at said surface to get the
@@ -48,7 +48,12 @@ type Flow flux diff = Exp Precision -> Exp flux -> Exp diff
 
 -- A Differ is responsible for taking the cell volume, as well as a vector of 
 -- flux pairs and reducing that to a time derivative. 
-type Differ vec flux diff = Exp Precision -> Exp (vec (flux,flux)) -> Exp diff 
+type Differ1 vec flux diff = Exp Precision -> Exp flux -> Exp flux -> Exp diff
+type Differ2 vec flux diff = Exp Precision -> Exp flux -> Exp flux ->
+                                              Exp flux -> Exp flux -> Exp diff 
+type Differ3 vec flux diff = Exp Precision -> Exp flux -> Exp flux ->
+                                              Exp flux -> Exp flux ->
+                                              Exp flux -> Exp flux -> Exp diff 
 
 -- An Accumulator is responsible for consuming a time derivative and a time delta
 -- it takes the change in time, the derivative in time and the initial state

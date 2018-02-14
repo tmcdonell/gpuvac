@@ -22,13 +22,13 @@ predictorFlux :: Fluxer MHD MHD
 predictorFlux = hancock mhdflux
 
 predictor:: Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 MHD) -> Acc (Array DIM3 MHD)
-predictor = advection3D projector predictorFlux differ 
+predictor = advection3D projector predictorFlux differ
 
 simulatorFlux :: Fluxer MHD MHD 
 simulatorFlux = average mhdmerge mhdscale mhdflux
 
 simulator:: Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 MHD) -> Acc (Array DIM3 MHD)
-simulator = advection3D projector simulatorFlux differ 
+simulator = advection3D projector simulatorFlux differ
 
 accumulator :: Accumulator MHD MHD 
 accumulator = accum mhdmerge mhdscale
