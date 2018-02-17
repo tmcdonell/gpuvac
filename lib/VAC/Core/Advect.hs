@@ -7,9 +7,10 @@ module VAC.Core.Advect where
 
 import qualified Prelude as P 
 
-import Control.Lens
+
 import Control.Applicative
 import Data.Array.Accelerate as Acc
+import Data.Array.Accelerate.Control.Lens
 import Data.Array.Accelerate.Linear
 import VAC.Core.Slicing as Slicing
 import VAC.Core.Types as Types
@@ -46,8 +47,8 @@ diff m f v fluxes = P.foldl1 m net where
 
 onDim :: forall state flux sh. (Shape sh,Elt state,Elt flux) => Lens' (Exp sh) (Exp Int) 
     -> Projector state -> Fluxer state flux -> Acc (Array sh (V3 Precision)) 
-    -> Acc (Array sh state)  -> (Acc (Array sh flux),Acc (Array sh flux))
-onDim dim proj fluxr geom states  = (left dim fluxR,right dim fluxL)
+    -> Acc (Array sh state)  -> Acc (Array sh (flux,flux))
+onDim dim proj fluxr geom states  = zip (left dim fluxR) (right dim fluxL)
     where
         --previous, current, and next states along the chosen dimension 
         (prev,curr,next) = unlift $ sten3 dim states :: (Acc (Array sh state), Acc (Array sh state), Acc (Array sh state))
@@ -61,11 +62,11 @@ onDim dim proj fluxr geom states  = (left dim fluxR,right dim fluxL)
 
 advection3D :: forall state flux diff. 
     (Elt state, Elt flux,Elt diff)=> Projector state -> Fluxer state flux 
-    -> Differ V3 flux diff -> Acc (Array DIM3 (Cell V3)) -> Acc (Array DIM3 state) 
+    -> Differ V3 flux diff -> Geometry3D -> Acc (Array DIM3 state) 
     -> Acc (Array DIM3 diff)
 advection3D proj fluxer diff geom input = derivative 
                             where
-                                (faces,volume) = unzip geom :: (Acc (Array DIM3 (Faces V3)),Acc (Array DIM3 Precision))
+                                (volume,xfaces,yfaces,zfaces) = unlift geom :: (Acc (Array DIM3 Precision),Acc (Array DIM3 (V3 Precision)),Acc (Array DIM3 (V3 Precision)),Acc (Array DIM3 (V3 Precision)))
                                 xfluxes = onDim _1 proj fluxer xfaces input 
                                 yfluxes = onDim _2 proj fluxer yfaces input 
                                 zfluxes = onDim _3 proj fluxer zfaces input 

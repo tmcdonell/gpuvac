@@ -48,12 +48,7 @@ type Flow flux diff = Exp Precision -> Exp flux -> Exp diff
 
 -- A Differ is responsible for taking the cell volume, as well as a vector of 
 -- flux pairs and reducing that to a time derivative. 
-type Differ1 vec flux diff = Exp Precision -> Exp flux -> Exp flux -> Exp diff
-type Differ2 vec flux diff = Exp Precision -> Exp flux -> Exp flux ->
-                                              Exp flux -> Exp flux -> Exp diff 
-type Differ3 vec flux diff = Exp Precision -> Exp flux -> Exp flux ->
-                                              Exp flux -> Exp flux ->
-                                              Exp flux -> Exp flux -> Exp diff 
+type Differ vec flux diff = Exp Precision -> Exp (vec (flux,flux)) -> Exp diff
 
 -- An Accumulator is responsible for consuming a time derivative and a time delta
 -- it takes the change in time, the derivative in time and the initial state
@@ -65,6 +60,6 @@ type Accumulator diff state = Exp Precision -> Exp diff -> Exp state -> Exp stat
 --The type of an overall simulator
 type Simulator sh state = Exp Precision -> Acc (Array sh state) -> Acc (Array sh state)
 
-type Geometry3D = Acc (Array DIM3 (V3 Precision , Cell V3))
-
-
+type Geometry3D = Acc (Array DIM3 Precision, Array DIM3 (V3 Precision), Array DIM3 (V3 Precision),Array DIM3 (V3 Precision) )
+type Geometry2D = Acc (Array DIM2 Precision, Array DIM2 (V2 Precision), Array DIM2 (V2 Precision) )
+type Geometry1D = Acc (Array DIM1 Precision, Array DIM1 (Precision))
