@@ -56,10 +56,13 @@ type Differ vec flux diff = Exp Precision -> Exp (vec (flux,flux)) -> Exp diff
 -- for time derivative to be of a different shape and type to your state variable.
 type Accumulator diff state = Exp Precision -> Exp diff -> Exp state -> Exp state
 
-
 --The type of an overall simulator
 type Simulator sh state = Exp Precision -> Acc (Array sh state) -> Acc (Array sh state)
 
-type Geometry3D = Acc (Array DIM3 Precision, Array DIM3 (V3 Precision), Array DIM3 (V3 Precision),Array DIM3 (V3 Precision) )
-type Geometry2D = Acc (Array DIM2 Precision, Array DIM2 (V2 Precision), Array DIM2 (V2 Precision) )
-type Geometry1D = Acc (Array DIM1 Precision, Array DIM1 (Precision))
+--Arrays are (Volume, n1,n2,n3) where n1 is a vector pointing along the first logical dimension
+--The size of the arrays are (Z:.d3:.d2:.d1,Z:.d3:.d2:.d1+1,Z:.d3:.d2+1:.d1,Z:.d3+1:.d2:.d1)
+--there are as many volumes as there are voxels, however there is one extra norm to take care of the fence post
+--issue. The actual normal is in the labratory frame.
+type Geometry3D = (Array DIM3 Precision, Array DIM3 (V3 Precision), Array DIM3 (V3 Precision),Array DIM3 (V3 Precision) )
+type Geometry2D = (Array DIM2 Precision, Array DIM2 (V2 Precision), Array DIM2 (V2 Precision) )
+type Geometry1D = (Array DIM1 Precision, Array DIM1 (Precision))

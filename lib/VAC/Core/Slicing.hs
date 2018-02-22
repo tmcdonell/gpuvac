@@ -29,6 +29,12 @@ trim dim n acc =
     in 
     slitOn dim n (m-n) acc
 
+dim3Array :: Acc (Array DIM3 Float)
+dim3Array = enumFromN (constant (Z:.10:.10:.10)) 0
+
+test :: Acc (Array DIM3 Float)
+test = trim _3 (constant 2) dim3Array
+
 sten3 :: (Shape sh, Elt e)
     => Lens' (Exp sh) (Exp Int)
     -> Acc (Array sh e) 

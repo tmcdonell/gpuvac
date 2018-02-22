@@ -27,7 +27,7 @@ library
             , lens-accelerate
 
   exposed-modules:     VAC.Core.Advect, VAC.Core.Geometry, VAC.Core.Integration, VAC.Core.Limits, VAC.Core.Types, VAC.Physics.MHD, VAC.Core.Slicing
-  -- other-modules:       
+  --other-modules:    
   other-extensions:    ScopedTypeVariables, TypeFamilies, ConstraintKinds, FlexibleContexts, Rank2Types, MultiParamTypeClasses, FunctionalDependencies, TypeSynonymInstances, FlexibleInstances, TemplateHaskell
   
   default-language:    Haskell2010

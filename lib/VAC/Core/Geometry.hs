@@ -1,7 +1,7 @@
 module VAC.Core.Geometry where 
 
 import qualified Prelude as P 
-
+import Data.Array.Accelerate.Control.Lens
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear
 import Linear.Matrix (fromQuaternion)
@@ -10,49 +10,88 @@ import VAC.Core.Types as Types
 
 delta :: (Precision, Precision) -> Exp Int -> Exp Precision
 delta (rmin,rmax) n = (constant $ rmax - rmin) / fromIntegral n 
-                      
 
-position :: (Precision,Precision) -> Exp Int -> Exp Int -> Exp Precision 
-position (rmin,rmax) n i = dx*(fromIntegral i) / (fromIntegral n) + dx/2.0 + constant rmin
-                                where 
-                                    dx = delta (rmin,rmax) n 
-
-cartesianVoxel :: Exp Precision -> Exp Precision -> Exp Precision -> Exp (Cell V3) 
-cartesianVoxel dx dy dz = lift $ (patch,dV)
-                            where
-                                patch = lift $ V3 (dAx,dAx) (dAy,dAy) (dAz,dAz) :: Exp (Faces V3)
-                                dAx = lift $ V3 (dy*dz) 0 0 :: Exp (V3 Precision)
-                                dAy = lift $ V3 0 (dx*dz) 0 :: Exp (V3 Precision)
-                                dAz = lift $ V3 0 0 (dx*dy) :: Exp (V3 Precision)
-                                dV = dx*dy*dz :: Exp Precision
+cartesian1D :: (Precision,Precision) -> Exp DIM1 -> Acc Geometry1D
+cartesian1D xrange dim = 
+        let 
+            lenx = dim ^. _1
+            dx = delta xrange lenx
+            padlen = dim & _1 .~ (lenx+1)
+        in 
+            lift (fill dim dx,fill padlen 1)
 
 
-cartesian3D :: (Precision,Precision) -> (Precision,Precision) -> (Precision,Precision) -> Exp DIM3 -> Exp DIM3 -> Exp (V3 Precision,Cell V3)
-cartesian3D xrange yrange zrange dimensions index = lift (location, geom)
-                                    where
-                                        (xpos,ypos,zpos) = unlift $ unindex3 index :: (Exp Int,Exp Int,Exp Int) 
-                                        (xsize,ysize,zsize) = unlift $ unindex3 dimensions :: (Exp Int,Exp Int,Exp Int) 
-                                        dx = delta xrange xsize :: Exp Precision
-                                        dy = delta yrange ysize :: Exp Precision
-                                        dz = delta zrange zsize :: Exp Precision
-                                        geom = cartesianVoxel dx dy dz :: Exp (Cell V3)
-                                        x = position xrange xsize xpos :: Exp Precision 
-                                        y = position yrange ysize ypos :: Exp Precision
-                                        z = position zrange zsize zpos :: Exp Precision
-                                        location = lift $ V3 x y z :: Exp (V3 Precision)
 
---creates a complete cylindrical voxel centered on theta = 0
-cylindricalVoxel :: Exp Precision -> Exp Precision -> Exp Precision -> Exp Precision -> Exp (Cell V3)
-cylindricalVoxel dr dz dt r = lift (patch,dV) where
-                                    dAr' rc = V3 (rc*dt*dz) 0.0 0.0 
-                                    rp = r - dr / 2.0 
-                                    rn = r + dr / 2.0
-                                    dAt' t = V3 (-1*(sin t)*dr*dz) ((cos tp)*dr*dz) 0.0
-                                    tp = -1.0*dt/2.0
-                                    tn = dt/2.0
-                                    dAz = V3 0.0 0.0 (negate $ dr*dt*r)
-                                    patch = V3 (dAr' rp, dAr' rn) (dAz,dAz) (dAt' tp,dAt' tn) 
-                                    dV = dr*dt*r*dz
+cartesian2D :: (Precision, Precision) -> (Precision,Precision) -> Exp DIM2 -> Acc Geometry2D
+cartesian2D xrange yrange dim = 
+        let 
+            lenx = dim ^. _1
+            leny = dim ^. _2
+            dx = delta xrange lenx
+            dy = delta yrange leny
+            padx = dim & _1 .~ (lenx+1)
+            pady = dim & _2 .~ (leny+1)
+            nx = (zero & _x .~ dy) :: Exp (V2 Precision)
+            ny = (zero & _y .~ dx) :: Exp (V2 Precision)
+        in
+            lift (fill dim (dx*dy),fill padx nx, fill pady ny)
+
+
+cartesian3D :: (Precision, Precision) -> (Precision,Precision) -> (Precision,Precision) -> Exp DIM3 -> Acc Geometry3D
+cartesian3D xrange yrange zrange dim = 
+        let 
+            lenx = dim ^. _1
+            leny = dim ^. _2
+            lenz = dim ^. _3
+            dx = delta xrange lenx
+            dy = delta yrange leny
+            dz = delta zrange lenz
+            padx = dim & _1 .~ (lenx+1)
+            pady = dim & _2 .~ (leny+1)
+            padz = dim & _3 .~ (lenz+1)
+            nx =  zero & _x .~ (dy*dz) :: Exp (V3 Precision)
+            ny =  zero & _y .~ (dx*dz) :: Exp (V3 Precision)
+            nz =  zero & _z .~ (dx*dy) :: Exp (V3 Precision)
+        in
+            lift (fill dim (dx*dy*dz),fill padx nx, fill pady ny,fill padz nz)
+
+
+cylindrical1D :: (Precision,Precision) -> Exp DIM1 -> Acc Geometry1D
+cylindrical1D rrange dim = 
+    let 
+        lenr = dim ^. _1
+        dr = delta rrange lenr
+        padr = dim & _1 .~ (lenr+1)
+        dz = constant 1.0 :: Exp Precision
+        dt = constant $ 2*pi :: Exp Precision
+        rmin = constant $ rrange ^. _1 :: Exp Precision
+        getR :: Exp DIM1 -> Exp Precision
+        getR sh = rmin + dr*(fromIntegral idx) where idx = (sh ^. _1) :: Exp Int
+        voxelR = map (\v -> v + dr/2.0) $ generate dim getR
+        voxelV = fill dim (dr*dz*dt)
+        nR = map (\v -> v * dt *dz) $ generate padr getR
+    in 
+        lift (zipWith (*) voxelR voxelV, nR) 
+
+
+cylindrical2D :: (Precision,Precision) -> (Precision,Precision) -> Exp DIM2 -> Acc Geometry2D
+cylindrical2D rrange zrange dim = 
+    let 
+        lenr = dim ^. _1
+        lenz = dim ^. _2
+        dr = delta rrange lenr
+        dz = delta zrange lenz
+        padr = dim & _1 .~ (lenr+1)
+        padz = dim & _2 .~ (lenz+1)
+        dt = constant $ 2*pi :: Exp Precision
+        rmin = constant $ rrange ^. _1 :: Exp Precision
+        getR :: Exp DIM2 -> Exp Precision
+        getR sh = rmin + dr*(fromIntegral idx) where idx = (sh ^. _1) :: Exp Int
+        voxelV = map (\v -> (v + dr/2.0)*dr*dz*dt) $ generate dim getR
+        nR = map (\v -> zero & _x .~ (v * dt *dz)) $ generate padr getR
+        nZ = map (\v -> zero & _y .~ (v * dt * dr)) $ generate padz getR
+    in 
+        lift (voxelV, nR,nZ) 
 
 rotateAboutZ :: Exp Precision -> Quaternion (Exp Precision) 
 rotateAboutZ amount = Quaternion (cos halfAngle) $ unlift imag where
@@ -60,37 +99,35 @@ rotateAboutZ amount = Quaternion (cos halfAngle) $ unlift imag where
             halfAngle = amount / 2.0 :: Exp Precision
             imag = axis ^* sin halfAngle :: Exp (V3 Precision) 
 
-rotatePatchPair :: Exp (M33 Precision) -> Exp (V3 Precision,V3 Precision) -> Exp (V3 Precision, V3 Precision)
-rotatePatchPair rot patches = lift (rot !* p1, rot !* p2) where (p1,p2) = unlift patches
+cylindrical3D :: (Precision,Precision) -> (Precision,Precision) -> Exp DIM3 -> Acc Geometry3D
+cylindrical3D rrange zrange dim = 
+    let 
+        lenr = dim ^. _1
+        lenz = dim ^. _2
+        lent = dim ^. _3
+        dr = delta rrange lenr
+        dz = delta zrange lenz
+        dt = delta (0,2*pi) lent
+        padr = dim & _1 .~ (lenr+1)
+        padz = dim & _2 .~ (lenz+1)
+        padt = dim & _3 .~ (lent+1)
 
-rotateCell :: Quaternion (Exp Precision) -> Exp (Cell V3) -> Exp (Cell V3) 
-rotateCell rotquat cell = lift $ (newpatch,volume)  where 
-        (patches, volume) = unlift cell :: (Exp (Faces V3), Exp Precision)
-        rotmat = lift $ fromQuaternion rotquat :: Exp (M33 Precision)
-        patchpairs = unlift patches :: V3 (Exp PatchPair)
-        mvfunc pair = rotatePatchPair rotmat pair :: Exp PatchPair 
-        newpairs = P.fmap mvfunc patchpairs :: V3 (Exp PatchPair)
-        newpatch = lift newpairs :: Exp (Faces V3) 
+        rmin = constant $ rrange ^. _1 :: Exp Precision
+        getR :: Exp DIM3 -> Exp Precision
+        getR sh = rmin + dr*(fromIntegral idx) where idx = (sh ^. _1) :: Exp Int
 
-sweepCell ::Exp Precision -> Exp (Cell V3) -> Exp (Cell V3)
-sweepCell amount input = rotateCell (rotateAboutZ amount) input
+        getT :: Exp DIM3 -> Exp Precision
+        getT sh = dt * (fromIntegral (sh ^. _3))
 
-cylindrical3D :: (Precision,Precision) -> (Precision,Precision) -> Exp DIM3 -> Exp DIM3 -> Exp (V3 Precision,Cell V3)
-cylindrical3D rrange zrange dimensions index = lift (pos,newvox)  
-                                        where
-                                            trange = (-pi,pi)
-                                            (rpos,zpos,tpos) = unlift $ unindex3 index :: (Exp Int,Exp Int,Exp Int) 
-                                            (rsize,zsize,tsize) = unlift $ unindex3 dimensions :: (Exp Int,Exp Int,Exp Int) 
-                                            dr = delta rrange rsize :: Exp Precision 
-                                            dz = delta zrange zsize :: Exp Precision 
-                                            dt = delta trange tsize :: Exp Precision 
-                                            r = position rrange rsize rpos :: Exp Precision
-                                            z = position zrange zsize zpos :: Exp Precision 
-                                            t = position trange tsize tpos - dt / 2.0 :: Exp Precision -- we want 0 aligned with first cell
-                                            vox = cylindricalVoxel dr dz dt r :: Exp (Cell V3) 
-                                            newvox = sweepCell t vox :: Exp (Cell V3) 
-                                            pos = lift $ V3 r z t :: Exp (V3 Precision)
+        voxelV = map (\v -> (v + dr/2.0)*dr*dz*dt) $ generate dim getR
+        nR = map (\v -> zero & _x .~ (v * dt *dz)) $ generate padr getR
+        nZ = map (\v -> zero & _y .~ (v * dt * dr)) $ generate padz getR
+        nT = fill padt (zero & _z .~ (dr*dz))
 
+        rotT = map (\v -> lift $ fromQuaternion $ rotateAboutZ v) $ generate padt getT
+        rotR = map (\v -> lift $ fromQuaternion $ rotateAboutZ (v+dt/2)) $ generate padr getT
+        nT' = zipWith (!*) rotT nT
+        nR' = zipWith (!*) rotR nR
+    in 
+        lift (voxelV, nR',nZ,nT')
 
-generateGeometry :: (Elt a, Shape sh) => (Exp sh -> Exp sh -> Exp a) -> Exp sh -> Acc (Array sh a) 
-generateGeometry gener size = generate size $ gener size

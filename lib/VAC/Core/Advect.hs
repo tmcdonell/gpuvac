@@ -8,7 +8,6 @@ module VAC.Core.Advect where
 import qualified Prelude as P 
 
 
-import Control.Applicative
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Control.Lens
 import Data.Array.Accelerate.Linear
@@ -58,23 +57,27 @@ onDim dim proj fluxr geom states  = zip (left dim fluxR) (right dim fluxL)
         (fluxL,fluxR) = unzip $ Acc.zipWith3 fluxr (trim dim 2 geom) (left dim dwnwind) (right dim upwind) :: (Acc (Array sh flux), Acc (Array sh flux))
         
         
-
+modshape :: Shape sh => sh -> sh -> sh
+modshape Z Z = Z
+modshape (e:.len) (b:.el) = (modshape e b):.(mod (el-2) (len-4))
 
 advection3D :: forall state flux diff. 
     (Elt state, Elt flux,Elt diff)=> Projector state -> Fluxer state flux 
-    -> Differ V3 flux diff -> Geometry3D -> Acc (Array DIM3 state) 
+    -> Differ V3 flux diff -> Acc Geometry3D -> Acc (Array DIM3 state) 
     -> Acc (Array DIM3 diff)
-advection3D proj fluxer diff geom input = derivative 
+advection3D proj fluxer diff geom input = backpermute (shape input) (modshape (shape input)) derivative 
                             where
-                                (volume,xfaces,yfaces,zfaces) = unlift geom :: (Acc (Array DIM3 Precision),Acc (Array DIM3 (V3 Precision)),Acc (Array DIM3 (V3 Precision)),Acc (Array DIM3 (V3 Precision)))
-                                xfluxes = onDim _1 proj fluxer xfaces input 
-                                yfluxes = onDim _2 proj fluxer yfaces input 
-                                zfluxes = onDim _3 proj fluxer zfaces input 
+                                (volume,faces1,faces2,faces3) = unlift geom :: (Acc (Array DIM3 Precision),Acc (Array DIM3 (V3 Precision)),Acc (Array DIM3 (V3 Precision)),Acc (Array DIM3 (V3 Precision)))
+                                fluxfunc :: Lens' (Exp DIM3) (Exp Int) -> Acc (Array DIM3 (V3 Precision)) -> Acc (Array DIM3 (flux,flux))
+                                fluxfunc lens faces = onDim lens proj fluxer faces input
+                                fluxes1 = fluxfunc _1 faces1 :: Acc (Array DIM3 (flux,flux))
+                                fluxes2 = fluxfunc _2 faces2 :: Acc (Array DIM3 (flux,flux))
+                                fluxes3 = fluxfunc _3 faces3 :: Acc (Array DIM3 (flux,flux))
                                 
                                 tobox a b c= lift $ V3 a b c :: Exp (V3 (flux,flux))
-                                fluxes = Acc.zipWith3 tobox xfluxes yfluxes zfluxes :: Acc (Array DIM3 (V3 (flux,flux)))
+                                fluxes = Acc.zipWith3 tobox fluxes1 fluxes2 fluxes3 :: Acc (Array DIM3 (V3 (flux,flux)))
                                 derivative = Acc.zipWith diff volume fluxes :: Acc (Array DIM3 diff)
-
+                               
 
 
 
