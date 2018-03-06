@@ -17,6 +17,20 @@ module VAC.Core.Slicing where
 import Data.Array.Accelerate as A
 import Data.Array.Accelerate.Control.Lens
 
+paddim :: (Shape sh, Elt e)
+    => Lens' (Exp sh) (Exp Int)
+    -> Exp Int
+    -> Acc (Array sh e)
+    -> Acc (Array sh e)
+paddim dim m acc =
+  let
+      currsh = shape acc
+      m'  = the (unit m)
+      n = view dim currsh
+      sh' = over dim (\i -> i+2*m) currsh 
+  in
+  backpermute sh' (over dim (\i -> mod i n)) acc
+
 slitOn :: (Shape sh, Elt e)
     => Lens' (Exp sh) (Exp Int)
     -> Exp Int
@@ -29,7 +43,7 @@ slitOn dim m n acc =
       n'  = the (unit n)
       sh' = over dim (\i -> n' `A.min` ((i-m') `A.max` 0)) (shape acc)
   in
-  backpermute sh' (& dim +~ m') acc
+  backpermute sh' (over dim ((+) m')) acc
 
 trim :: (Shape sh, Elt e) 
     => Lens' (Exp sh) (Exp Int)

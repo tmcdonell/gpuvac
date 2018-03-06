@@ -16,7 +16,7 @@ module VAC.Core.Types where
 import Data.Array.Accelerate as Acc
 import Data.Array.Accelerate.Linear
 
-type Precision = Float 
+type Precision = Double 
 
 type Limiter = Exp Precision -> Exp Precision -> Exp Precision -> Exp Precision 
 

@@ -56,7 +56,7 @@ geometry :: Acc Geometry3D
 geometry = cylindrical3D (0.1,1) (0,1) dimensions 
 
 testsimulator ::  Acc Geometry3D -> Acc (Array DIM3 MHD) -> Acc (Array DIM3 MHD)
-testsimulator cells input = constructSimulator P.id cells (constant 1e-9) input
+testsimulator cells input = constructSimulator P.id cells (constant 0.0) input
 
 initial :: Acc (Array DIM3 MHD) 
 initial = Acc.generate dimensions (\_ -> constant mhdzero)

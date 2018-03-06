@@ -69,16 +69,14 @@ onDim dim proj fluxr geom states  = zip (left dim fluxR) (right dim fluxL)
         --trim two of either side of the geometry to account for the slicing
         (fluxL,fluxR) = unzip $ Acc.zipWith3 fluxr (trim dim 2 geom) (left dim dwnwind) (right dim upwind) :: (Acc (Array sh flux), Acc (Array sh flux))
         
-        
-modshape :: Shape sh => sh -> sh -> sh
-modshape Z Z = Z
-modshape (e:.len) (b:.el) = (modshape e b):.(mod (el-2) (len-4))
+
+
 
 advection3D :: forall state flux diff. 
     (Elt state, Elt flux,Elt diff)=> Projector state -> Fluxer state flux 
     -> Differ V3 flux diff -> Acc Geometry3D -> Acc (Array DIM3 state) 
     -> Acc (Array DIM3 diff)
-advection3D proj fluxer diff geom input = backpermute (shape input) (modshape (shape input)) derivative 
+advection3D proj fluxer diff geom input = paddim _1 2 . paddim _2 2 . paddim _3 2 $  derivative 
                             where
                                 (volume,faces1,faces2,faces3) = unlift geom :: (Acc (Array DIM3 Precision),Acc (Array DIM3 (V3 Precision)),Acc (Array DIM3 (V3 Precision)),Acc (Array DIM3 (V3 Precision)))
                                 fluxfunc :: Lens' (Exp DIM3) (Exp Int) -> Acc (Array DIM3 (V3 Precision)) -> Acc (Array DIM3 (flux,flux))

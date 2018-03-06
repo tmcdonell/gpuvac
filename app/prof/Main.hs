@@ -30,7 +30,7 @@ step :: Geometry3D -> Array DIM3 MHD -> Array DIM3 MHD
 step = $(PTX.runQ testsimulator)
 
 values :: Array DIM3 MHD
-values = L.foldl' (\p _ -> step cell p) startcond [1..1]
+values = L.foldl' (\p _ -> step cell p) startcond [1..100]
 
 main :: IO ()
 main = putStrLn . show $ indexArray values (Z:.0:.0:.0)
