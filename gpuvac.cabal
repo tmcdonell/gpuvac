@@ -1,7 +1,7 @@
 name:                gpuvac
 version:             0.1.0.0
 synopsis:            Accelerated Advection Code
--- description:         
+-- description:
 homepage:            https://github.com/generalfusion/gpuvac
 license:             Apache-2.0
 author:              Jonathan Fraser
@@ -14,18 +14,25 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      lib
-  build-depends:       
-            base >=4.10 && <4.11
-            , lens >=4.15 && <4.16
-            , accelerate >=1.1 && <1.2
-            , linear-accelerate >=0.5 && <0.6
-            , linear 
+  build-depends:
+          base                            >= 4.10 && < 4.12
+        , accelerate
+        , lens
+        , linear
+        , linear-accelerate
 
-  exposed-modules:     VAC.Core.Advect, VAC.Core.Geometry, VAC.Core.Integration, VAC.Core.Limits, VAC.Core.Types, VAC.Physics.MHD
-  -- other-modules:       
-  other-extensions:    ScopedTypeVariables, TypeFamilies, ConstraintKinds, FlexibleContexts, Rank2Types, MultiParamTypeClasses, FunctionalDependencies, TypeSynonymInstances, FlexibleInstances, TemplateHaskell
-  
-  default-language:    Haskell2010
+  exposed-modules:
+        VAC.Core.Advect
+        VAC.Core.Geometry
+        VAC.Core.Integration
+        VAC.Core.Limits
+        VAC.Core.Types
+        VAC.Physics.MHD
+
+  -- other-modules:
+
+  default-language:
+        Haskell2010
 
 
 Executable prof
@@ -46,11 +53,13 @@ Executable prof
         -auto-all
 
   build-depends:
-          base                            >= 4.10 && < 4.11
-        , accelerate                      >= 1.1 && < 1.3
+          base                            >= 4.10 && < 4.12
+        , accelerate                      >= 1.1 && < 1.4
         , gpuvac
-        , accelerate-llvm-ptx             >=1.1 && <1.2
-        , accelerate-llvm-native          >=1.1 && <1.2
-        , linear-accelerate               >=0.5 && <0.6
-  
+        , accelerate-llvm-ptx             >= 1.1 && < 1.4
+        , accelerate-llvm-native          >= 1.1 && < 1.4
+        , linear-accelerate               >= 0.5 && < 0.7
+
   default-language:    Haskell2010
+
+-- vim: nospell
