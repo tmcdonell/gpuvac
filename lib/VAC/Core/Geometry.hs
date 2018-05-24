@@ -16,7 +16,7 @@ module VAC.Core.Geometry where
 import qualified Prelude as P 
 
 import Data.Array.Accelerate as Acc
-import Data.Array.Accelerate.Linear
+import Data.Array.Accelerate.Linear hiding (fromQuaternion)
 import Linear.Matrix (fromQuaternion)
 
 import VAC.Core.Types as Types
